@@ -13,6 +13,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      pages_enabled: ${{ steps.pages.outputs.enabled }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,7 +24,19 @@ jobs:
         run: |
           node --check src/game.js
           npm test
+      - name: Check Pages setup
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.build_type' > /tmp/metroforge-pages-source && [ "$(cat /tmp/metroforge-pages-source)" = "workflow" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Enable Settings > Pages > Source: GitHub Actions, then run this workflow again. The tested game artifact is available in this run."
+          fi
       - name: Configure Pages
+        if: steps.pages.outputs.enabled == 'true'
         uses: actions/configure-pages@v5
       - name: Prepare game files
         run: |
@@ -35,6 +49,7 @@ jobs:
         with:
           path: _site
   deploy:
+    if: needs.build.outputs.pages_enabled == 'true'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
