@@ -1,78 +1,108 @@
-# MetroForge 🏙️
+# MetroForge V4 🏙️
 
-An original browser-based city-building game inspired by the city-simulation genre.
+**MetroForge** is an original browser city-building simulation designed to grow into a deep city-management game.
 
-## Playable now
+## 🎮 Live Demo
 
-- Roads
-- Residential, commercial, and industrial zoning
-- Growing buildings
-- Population and jobs
-- City budget and taxes
-- Power and water
-- Parks, police, fire stations, and schools
-- Happiness and traffic
-- Residential/commercial/industrial demand
-- Random fires
-- Milestones and rewards
-- Pause, 1×, 2×, and 4× simulation speed
-- Save/load in browser storage
-- Desktop and mobile-friendly UI
+**https://dvilrgamerz.github.io/readme/**
 
-## Play
+No download is required. The game runs directly in the browser through GitHub Pages.
 
-Open **index.html**, or enable GitHub Pages for this repository.
+## Current Version: V4
 
-### GitHub Pages
+MetroForge has now gone through three major expansion stages:
 
-Go to:
-
-**Settings → Pages → Deploy from a branch → main → /(root) → Save**
-
-## Roadmap
-
-### v0.2
-- Road connectivity
-- Better service coverage
+### V2 — Management Expansion
 - Land value
 - Pollution
-- Education
 - Health
+- Education
 - Crime
-- Loans and city policies
+- Service coverage
+- City policies
+- Service budgets
+- Municipal loans
+- Improved economy and zoning growth
 
-### v0.3
-- Real vehicle pathfinding
-- Cars and traffic intersections
-- Buses
-- Trains
-- Metro
-- Cargo and public transport lines
+### V3 — Traffic & Transit Expansion
+- Connected road networks
+- Zones need road access
+- Roads and avenues
+- Animated vehicles
+- Traffic congestion
+- Bus stops
+- Metro stations
+- Transit ridership
+- Traffic overlay
 
-### v0.4
-- Procedural maps
-- Terrain elevation
-- Rivers and flooding
-- Districts
-- Weather
-- Day/night
-- More disasters
-- Map editor
+### V4 — World Simulation Expansion
+- 48×30 city map
+- Procedural map generation
+- Rivers
+- Day/night cycle
+- Dynamic weather
+- Rain and storms
+- Fire and flood disasters
+- District painting
+- Hospitals
+- Recycling centers
+- Missions and rewards
+- Expanded milestones
+- Land-value overlay
+- Pollution overlay
+- Service overlay
+- Advanced happiness simulation
+- Education, health, crime and pollution statistics
+- City debt and loan system
+- Automatic saves
+- Manual save/load
+- Responsive UI
+- Mouse-wheel zoom
 
-### v0.5+
-- Simulated citizens
-- Homes and workplaces
-- Building abandonment/upgrades
+## How to Play
+
+1. Connect your starter road to the city.
+2. Build residential, commercial, and industrial zones next to connected roads.
+3. Add electricity and water.
+4. Grow jobs and population together.
+5. Use schools, hospitals, police, fire stations, parks and recycling to improve the city.
+6. Watch traffic, pollution, land value, health and education.
+7. Complete missions and population milestones for bonus funding.
+8. Use buses, metro stations, avenues and policies as the city becomes larger.
+
+## Controls
+
+- **Left click / drag:** Build
+- **Right click:** Bulldoze
+- **Mouse wheel:** Zoom
+- **Pause / 1× / 2× / 4×:** Simulation speed
+- **Overlays:** Inspect land value, traffic, pollution and services
+
+## Version History
+
+See [CHANGELOG.md](CHANGELOG.md).
+
+Version notes:
+- [V2](versions/V2.md)
+- [V3](versions/V3.md)
+- [V4](versions/V4.md)
+
+## Future V5 Ideas
+
+- Destination-based traffic pathfinding
+- Intersections and traffic lights
+- Custom bus routes
+- Rail and cargo networks
+- Individual citizens and households
+- Building abandonment
+- Supply chains
 - Tourism
-- Industry supply chains
-- Unique buildings
-- Larger maps
-- 3D version in a dedicated game engine
+- District-specific laws
+- Terrain height and terraforming
+- Map editor
+- Much larger maps
+- 3D edition
 
-## Project goal
+## Project Goal
 
-Grow MetroForge from a lightweight GitHub browser game into a deep, original city-management simulator.
-
-## License
-
-Starter game code is intended for this project. Use original art, audio, names, and assets when expanding it.
+Build MetroForge into a large, original city-building game while keeping a free browser version playable through GitHub Pages.
