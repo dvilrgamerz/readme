@@ -17,7 +17,7 @@ const overlays=['none','land','traffic','pollution','services'].map(n=>{const e=
 const document={getElementById:id=>elements.get(id),querySelector:s=>elements.get(s.slice(1)),createElement:tag=>new Element(tag),querySelectorAll:s=>s==='.tool'?elements.get('toolGrid').children:s==='.speed'?speeds:s==='.overlay'?overlays:[],addEventListener(){},body:{dataset:{}}};
 const storage=new Map();const sandbox={...systems,...v6,document,console,performance,structuredClone,setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:f=>queue.push(f),ResizeObserver:class{observe(){}},localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)},window:{addEventListener(){}},URL,Blob,confirm:()=>true};
 vm.createContext(sandbox);let source=fs.readFileSync('src/game.js','utf8').replace(/^import.*\n/gm,'');
-source+='\nglobalThis.qa={getCity:()=>city,build,simulationStep,loadRaw,tileBase,economyDay,gameLoop,reset:()=>{city=freshCity();invalidate()},force:()=>lastPaint=""};';
+source+='\nglobalThis.qa={getCity:()=>city,getCars:()=>cars,build,simulationStep,loadRaw,tileBase,economyDay,gameLoop,reset:()=>{city=freshCity();invalidate()},force:()=>lastPaint=""};';
 vm.runInContext(source,sandbox);const q=sandbox.qa;
 assert.equal(elements.get('toolGrid').children.length,24);
 q.reset();q.force();q.build(1,36,'residential');q.simulationStep(false);assert.equal(q.getCity().grid[36][1].connected,true);
@@ -31,6 +31,9 @@ elements.get('saveBtn').onclick();elements.get('loadBtn').onclick();assert.equal
 assert.equal(q.getCity().grid.length,40);assert.equal(q.getCity().grid[0].length,64);
 q.economyDay();assert(Number.isFinite(q.getCity().v6.budget.net));assert(q.getCity().v6.householdCount>0);
 assert(q.getCity().v6.workers<q.getCity().population,'children are not workers');
+q.getCity().v6.vehicles=[{id:1,kind:'car',path:[[5,15],[6,15]],index:0,t:.4,speed:2,age:0,wait:0,payload:0,color:'#ffd35e'}];q.getCity().cashflow=-123;
+elements.get('saveBtn').onclick();elements.get('loadBtn').onclick();assert.equal(q.getCars().length,1,'paused vehicles render after loading');assert.equal(q.getCity().cashflow,-123);assert.equal(q.getCity().lastPopulation,q.getCity().population);
 const before=q.getCity();assert.throws(()=>q.loadRaw('{'));assert.equal(q.getCity(),before);
+for(let day=0;day<40;day++){q.simulationStep(false);q.economyDay();assert(Number.isFinite(q.getCity().funds));assert(Number.isFinite(q.getCity().v6.budget.net));}
 for(const b of overlays)b.onclick();for(let i=0;i<100;i++)q.gameLoop(performance.now()+i*17);
 });

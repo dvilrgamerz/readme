@@ -1,5 +1,5 @@
 import {newV6, sanitiseV6, TrafficEngine, budgetBreakdown, developmentBlockers, tileId} from "./v6.js";
-import {isRoad, isZone, roadNetwork, shortestRoadPath, coverageFields, parseSave} from "./systems.js";
+import {isRoad, isZone, roadNetwork, coverageFields, parseSave} from "./systems.js";
 const canvas = document.querySelector("#gameCanvas");
 let ctx = canvas.getContext("2d");
 const W = 64, H = 40, TILE = 25;
@@ -68,8 +68,7 @@ let lastFrame = performance.now();
 let cars = [];
 let transport=null,routeDraft=[],drawingRoute=false;
 let rain = [];
-let roadTiles=[], tripOrigins=[], tripDestinations=[], trafficLoads=new Map();
-let spawnAccumulator=0, trafficPaintAccumulator=0;
+let trafficLoads=new Map(),trafficPaintAccumulator=0;
 let networkDirty=true, mapDirty=true, fields={}, inspectTile=null, density=0;
 let districtBrush=1, uiAccumulator=0, animationDt=1/60;
 const mapLayer=document.createElement('canvas');mapLayer.width=canvas.width;mapLayer.height=canvas.height;
@@ -292,17 +291,10 @@ new ResizeObserver(applyCamera).observe(canvas.parentElement);
 
 function updateRoadConnectivity(){
   if(!networkDirty)return;
-  roadTiles=roadNetwork(city.grid);cars=[];trafficLoads.clear();tripOrigins=[];tripDestinations=[];
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
-    const c=city.grid[y][x];if(!c.connected)continue;
-    const access=neighbors(x,y).find(([nx,ny])=>isRoad(city.grid[ny][nx].type)&&city.grid[ny][nx].connected);
-    if(!access)continue;
-    if(c.type==='residential')tripOrigins.push({road:access,x,y});
-    if(['commercial','industrial'].includes(c.type))tripDestinations.push({road:access,x,y});
-  }
+  roadNetwork(city.grid);trafficLoads.clear();
   fields=coverageFields(city.grid,SERVICE_SPECS);networkDirty=false;
   if(!transport||transport.city!==city)transport=new TrafficEngine(city);else transport.rebuild();
-  transport.householdPass();
+  transport.householdPass();cars=city.v6.vehicles;
 }
 
 function utilityPass(){
@@ -382,12 +374,10 @@ function environmentPass(){
 
 function simulateZones(develop=true){
   city.lastPopulation=city.population;
-  let pop=0,jobs=0,roads=0,avenues=0;
+  let pop=0,jobs=0;
   for(let y=0;y<H;y++) for(let x=0;x<W;x++){
     const c=city.grid[y][x];
     if(develop)c.age++;
-    if(c.type==="road"&&c.connected) roads++;
-    if((c.type==="avenue"||c.type==="bridge")&&c.connected) avenues++;
     if(!["residential","commercial","industrial"].includes(c.type)) continue;
 
     const demand=c.type==="residential"?city.demands.res:c.type==="commercial"?city.demands.com:city.demands.ind;
@@ -769,7 +759,7 @@ function loadRaw(raw){
   const next=parseSave(raw,freshCity(),Object.keys(BUILD),W,H);
   if(next.mission){const template=MISSIONS.find(m=>m.id===next.mission.id);next.mission={...template,...next.mission};}
   const input=JSON.parse(raw);next.v6=sanitiseV6((input.city||input).v6,next.grid);
-  city=next;transport=null;routeDraft=[];drawingRoute=false;cars=[];rain=[];if(city.weather==="Rain"||city.weather==="Storm")for(let i=0;i<150;i++)rain.push({x:rand(0,canvas.width),y:rand(0,canvas.height),s:rand(5,12)});simAccumulator=0;inspectTile=null;invalidate();simulationStep(false);syncControls();syncV5Controls();updateUI();
+  city=next;transport=null;routeDraft=[];drawingRoute=false;cars=[];rain=[];if(city.weather==="Rain"||city.weather==="Storm")for(let i=0;i<150;i++)rain.push({x:rand(0,canvas.width),y:rand(0,canvas.height),s:rand(5,12)});simAccumulator=0;inspectTile=null;invalidate();simulationStep(false);city.lastPopulation=city.population;syncControls();syncV5Controls();updateUI();
 }
 $('saveBtn').onclick=()=>{if(storeCity('metroforge-v6-save'))showToast('City saved.');};
 $('loadBtn').onclick=()=>{

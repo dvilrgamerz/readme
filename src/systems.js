@@ -75,7 +75,7 @@ export function parseSave(raw, defaults, allowedTypes, w, h) {
   }));
   for(const k of ['funds','debt','day','year','hour','speed','serviceBudget']) out[k]=finite(data[k],k==='funds'?-10000:0,k==='funds'?1e12:k==='debt'?1e9:k==='day'?360:k==='hour'?23.99:k==='speed'?4:k==='serviceBudget'?150:1e6,out[k]);
   out.day=Math.max(1,Math.floor(out.day));out.year=Math.max(1,Math.floor(out.year));out.speed=[1,2,4].includes(out.speed)?out.speed:1;
-  out.serviceBudget=Math.max(50,out.serviceBudget);out.paused=!!data.paused;
+  out.serviceBudget=Math.max(50,out.serviceBudget);out.cashflow=finite(data.cashflow,-1e12,1e12,0);out.paused=!!data.paused;
   for(const k of ['res','com','ind']) out.taxes[k]=finite(data.taxes?.[k],1,20,9);
   for(const k of ['green','education','freeTransit']) out.policies[k]=!!data.policies?.[k];
   out.milestones=Array.isArray(data.milestones)?[...new Set(data.milestones.filter(i=>Number.isInteger(i)&&i>=0&&i<5))]:[];
