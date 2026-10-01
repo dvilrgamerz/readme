@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MetroForge — City Builder</title>
+<style>
+:root{--bg:#08111f;--panel:#101b2e;--line:#253954;--text:#ecf3ff;--muted:#90a6c4}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#08111f;color:var(--text);font-family:Inter,system-ui,Segoe UI,sans-serif}
+body{display:flex;flex-direction:column;overflow:hidden}.top{height:72px;display:flex;align-items:center;gap:18px;padding:10px 15px;background:#0b1524;border-bottom:1px solid var(--line)}
+.brand{min-width:190px}.brand b{font-size:20px}.brand small{display:block;color:var(--muted)}
+.stats{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.stat,.card{background:#0e1a2b;border:1px solid #1f314a;border-radius:10px;padding:7px 9px}.stat small,.card small{display:block;color:var(--muted)}
+button{background:#172943;color:#eef5ff;border:1px solid #2a4261;border-radius:9px;padding:8px 10px;cursor:pointer}button:hover{background:#203754}button.on{outline:2px solid #52d497}
+.main{flex:1;min-height:0;display:grid;grid-template-columns:220px 1fr 235px}.panel{background:#0d1727;padding:12px;overflow:auto}.left{border-right:1px solid var(--line)}.right{border-left:1px solid var(--line)}
+h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9fb2cf;margin:10px 0}.tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tool{text-align:left;min-height:56px}.tool b{display:block;font-size:11px}.tool small{font-size:9px;color:#9cb0ca}
+.row{display:flex;gap:6px}.wide{width:100%;margin-top:7px}.danger{background:#44232c}.slider{font-size:11px;color:#afc0d8;margin:9px 0}.slider span{display:flex;justify-content:space-between}.slider input{width:100%}
+.game{position:relative;display:grid;place-items:center;overflow:hidden;background:#17313a}canvas{max-width:100%;max-height:100%;background:#3e7553;image-rendering:pixelated;box-shadow:0 12px 30px #0008}
+.toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#07111ee8;border:1px solid #355270;border-radius:999px;padding:8px 13px;font-size:12px}.hide{display:none}
+.meter{height:7px;background:#192a40;border-radius:99px;overflow:hidden;margin:5px 0 10px}.meter i{display:block;height:100%;background:linear-gradient(90deg,#4dc782,#5ab2ff)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:6px}.alert{font-size:11px;padding:8px;border:1px solid #2a405e;border-radius:8px;margin:6px 0}.bad{border-color:#7b3944}.warn{border-color:#7a6134}
+footer{height:26px;background:#07101d;border-top:1px solid var(--line);padding:5px 12px;color:#6f86a6;font-size:10px}
+@media(max-width:900px){.right{display:none}.main{grid-template-columns:190px 1fr}.stats{grid-template-columns:repeat(3,1fr)}.stat:nth-child(n+4){display:none}}
+@media(max-width:650px){body{overflow:auto}.top{height:auto;flex-wrap:wrap}.stats{order:3;width:100%}.main{grid-template-columns:1fr}.left{order:2}.game{height:62vh}.left .slider{display:none}footer{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+<div class="brand"><b>🏙️ MetroForge</b><small>Build • Balance • Expand</small></div>
+<div class="stats">
+<div class="stat"><small>Funds</small><b id="funds">$25,000</b></div>
+<div class="stat"><small>Population</small><b id="pop">0</b></div>
+<div class="stat"><small>Happiness</small><b id="happy">55%</b></div>
+<div class="stat"><small>Traffic</small><b id="traffic">100%</b></div>
+<div class="stat"><small>Day</small><b id="day">1</b></div>
+</div>
+<div class="row"><button id="pause">⏸</button><button class="spd on" data-s="1">▶</button><button class="spd" data-s="2">▶▶</button><button class="spd" data-s="4">▶▶▶</button></div>
+</header>
+<div class="main">
+<aside class="panel left">
+<h3>Build</h3><div class="tools" id="tools"></div>
+<h3>Taxes</h3>
+<div class="slider"><span>Residential <b id="rtx">9%</b></span><input id="rt" type="range" min="1" max="20" value="9"></div>
+<div class="slider"><span>Commercial <b id="ctx">9%</b></span><input id="ct" type="range" min="1" max="20" value="9"></div>
+<div class="slider"><span>Industrial <b id="itx">9%</b></span><input id="it" type="range" min="1" max="20" value="9"></div>
+<div class="row"><button class="wide" id="save">Save</button><button class="wide" id="load">Load</button></div>
+<button class="wide danger" id="new">New City</button>
+</aside>
+<section class="game"><canvas id="c" width="1120" height="784"></canvas><div id="toast" class="toast hide"></div></section>
+<aside class="panel right">
+<h3>Demand</h3>
+<small>Residential <b id="rdl">55%</b></small><div class="meter"><i id="rd" style="width:55%"></i></div>
+<small>Commercial <b id="cdl">35%</b></small><div class="meter"><i id="cd" style="width:35%"></i></div>
+<small>Industrial <b id="idl">45%</b></small><div class="meter"><i id="id" style="width:45%"></i></div>
+<h3>Infrastructure</h3>
+<div class="kv">
+<div class="card"><small>Power</small><b id="power">0/0</b></div>
+<div class="card"><small>Water</small><b id="water">0/0</b></div>
+<div class="card"><small>Jobs</small><b id="jobs">0/0</b></div>
+<div class="card"><small>Cashflow</small><b id="cash">$0</b></div>
+</div>
+<h3>Alerts</h3><div id="alerts"></div>
+<h3>Milestones</h3><div id="miles"></div>
+</aside>
+</div>
+<footer>Left click / drag to build • Right click to bulldoze • Save data stays in your browser</footer>
+<script>
+const C=document.getElementById("c"),X=C.getContext("2d"),W=40,H=28,T=28,$=x=>document.getElementById(x),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const M={empty:{n:"Land",c:"#3f7652",p:0},water:{n:"Water",c:"#2f719e",p:0},road:{n:"Road",c:"#555d69",p:20,u:1},res:{n:"Residential",c:"#54ce7b",p:35,u:1},com:{n:"Commercial",c:"#54a8ff",p:45,u:2},ind:{n:"Industrial",c:"#e8b94a",p:50,u:2},park:{n:"Park",c:"#79da64",p:150,u:5},power:{n:"Power Plant",c:"#b967ff",p:1200,u:60},tower:{n:"Water Tower",c:"#41cfe7",p:850,u:35},fire:{n:"Fire Station",c:"#f56868",p:900,u:45},police:{n:"Police",c:"#6c83ff",p:900,u:45},school:{n:"School",c:"#f18cff",p:1100,u:55}};
+const toolData=[["road","🛣️"],["res","🏠"],["com","🏪"],["ind","🏭"],["park","🌳"],["power","⚡"],["tower","💧"],["fire","🚒"],["police","🚓"],["school","🏫"],["bulldoze","🧨"]];
+const milestones=[{p:100,t:"Hamlet",r:1500},{p:500,t:"Town",r:3500},{p:1500,t:"Growing City",r:8000},{p:5000,t:"Metropolis",r:20000}];
+function fresh(){
+ let g=[];for(let y=0;y<H;y++){let r=[];for(let x=0;x<W;x++){let water=x>=30&&x<=32;r.push({t:water?"water":"empty",l:0,r:0,j:0,pw:false,wa:false})}g.push(r)}
+ return{g:g,f:25000,p:0,j:0,e:0,h:55,tr:100,d:1,paused:false,s:1,tax:{r:9,c:9,i:9},dem:{r:55,c:35,i:45},pw:{cap:0,use:0},wa:{cap:0,use:0},cash:0,ms:[]}
+}
+let city=fresh(),tool="road",down=false,last="",clock=0,ticks=0;
+const money=n=>(n<0?"-":"")+"$"+Math.abs(Math.round(n)).toLocaleString();
+function toast(s){let e=$("toast");e.textContent=s;e.classList.remove("hide");clearTimeout(toast.x);toast.x=setTimeout(()=>e.classList.add("hide"),1400)}
+function near(x,y){return[[x+1,y],[x-1,y],[x,y+1],[x,y-1]].filter(a=>a[0]>=0&&a[1]>=0&&a[0]<W&&a[1]<H)}
+function roadNear(x,y){return near(x,y).some(a=>city.g[a[1]][a[0]].t==="road")}
+function svc(x,y,t,r=6){for(let yy=Math.max(0,y-r);yy<=Math.min(H-1,y+r);yy++)for(let xx=Math.max(0,x-r);xx<=Math.min(W-1,x+r);xx++)if(city.g[yy][xx].t===t&&Math.abs(xx-x)+Math.abs(yy-y)<=r)return true;return false}
+function count(t){let n=0;for(let r of city.g)for(let q of r)if(q.t===t)n++;return n}
+for(let a of toolData){let k=a[0],b=document.createElement("button"),m=k==="bulldoze"?{n:"Bulldoze",p:5}:M[k];b.className="tool"+(k==="road"?" on":"");b.dataset.t=k;b.innerHTML="<b>"+a[1]+" "+m.n+"</b><small>"+money(m.p)+"</small>";b.onclick=()=>{tool=k;document.querySelectorAll(".tool").forEach(z=>z.classList.toggle("on",z===b))};$("tools").appendChild(b)}
+function pos(e){let r=C.getBoundingClientRect();return{x:Math.floor((e.clientX-r.left)*(C.width/r.width)/T),y:Math.floor((e.clientY-r.top)*(C.height/r.height)/T)}}
+function build(x,y,k){let q=city.g[y]&&city.g[y][x];if(!q)return;let sig=x+":"+y+":"+k;if(sig===last)return;last=sig;
+ if(k==="bulldoze"){if(q.t==="empty"||q.t==="water")return;if(city.f<5)return toast("Not enough money");city.f-=5;Object.assign(q,{t:"empty",l:0,r:0,j:0});return}
+ if(q.t!=="empty")return;let m=M[k];if(city.f<m.p)return toast("Not enough money");city.f-=m.p;Object.assign(q,{t:k,l:0,r:0,j:0})
+}
+C.onmousedown=e=>{e.preventDefault();down=true;last="";let p=pos(e);build(p.x,p.y,e.button===2?"bulldoze":tool)};
+C.onmousemove=e=>{if(down){let p=pos(e);build(p.x,p.y,e.buttons===2?"bulldoze":tool)}};C.oncontextmenu=e=>e.preventDefault();window.onmouseup=()=>{down=false;last=""};
+function utilities(){let pc=0,wc=0,pu=0,wu=0;for(let r of city.g)for(let q of r){if(q.t==="power")pc+=650;if(q.t==="tower")wc+=550;if(["res","com","ind"].includes(q.t)){pu+=3*(1+q.l);wu+=2*(1+q.l)}}city.pw={cap:pc,use:pu};city.wa={cap:wc,use:wu};let po=pu===0||pc>=pu,wo=wu===0||wc>=wu;for(let r of city.g)for(let q of r)if(["res","com","ind"].includes(q.t)){q.pw=po;q.wa=wo}}
+function sim(){
+ let p=0,j=0,roads=0,parks=0,police=0,fire=0,schools=0;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){let q=city.g[y][x];if(q.t==="road"){roads++;continue}if(q.t==="park")parks++;if(q.t==="police")police++;if(q.t==="fire")fire++;if(q.t==="school")schools++;if(!["res","com","ind"].includes(q.t))continue;
+  let dem=q.t==="res"?city.dem.r:q.t==="com"?city.dem.c:city.dem.i,tax=q.t==="res"?city.tax.r:q.t==="com"?city.tax.c:city.tax.i,bonus=(svc(x,y,"park")?8:0)+(svc(x,y,"police")?5:0)+(svc(x,y,"fire")?5:0)+(svc(x,y,"school")?6:0),chance=clamp((dem+bonus-Math.max(0,tax-10)*5)/110,.02,.9);
+  if(roadNear(x,y)&&q.pw&&q.wa&&Math.random()<chance*.18&&q.l<3)q.l++;if((!roadNear(x,y)||!q.pw||!q.wa||tax>17)&&Math.random()<.06)q.l=Math.max(0,q.l-1);
+  if(q.t==="res"){q.r=q.l?[8,22,55][q.l-1]:0;p+=q.r}else{q.j=q.l?(q.t==="com"?[5,16,40][q.l-1]:[8,24,60][q.l-1]):0;j+=q.j}
+ }
+ city.p=p;city.j=j;city.e=Math.min(p,j);let un=p?Math.max(0,(p-city.e)/p):0,con=clamp((p+j)/(Math.max(1,roads)*16),0,1);city.tr=Math.round(100-con*55);let services=clamp(parks*1.5+police*2+fire*2+schools*2,0,18),pen=(city.pw.use>city.pw.cap?14:0)+(city.wa.use>city.wa.cap?14:0);city.h=Math.round(clamp(68+services-un*35-(100-city.tr)*.22-pen-Math.max(0,city.tax.r-11)*2,5,100));
+ let jc=count("com")*40+count("ind")*60;city.dem.r=Math.round(clamp(62+(jc-p)*.018-(city.tax.r-9)*5,0,100));city.dem.c=Math.round(clamp(30+p*.015-count("com")*7-(city.tax.c-9)*4,0,100));city.dem.i=Math.round(clamp(42+p*.012-count("ind")*6-(city.tax.i-9)*4,0,100))
+}
+function economy(){let u=0;for(let r of city.g)for(let q of r)u+=M[q.t].u||0;let cj=0,ij=0;for(let r of city.g)for(let q of r){if(q.t==="com")cj+=q.j;if(q.t==="ind")ij+=q.j}let inc=city.p*(city.tax.r/100)*1.5+cj*(city.tax.c/100)*3.2+ij*(city.tax.i/100)*2.7;city.cash=Math.round(inc-u);city.f+=city.cash;city.d++}
+function events(){if(city.p<100||Math.random()>.02)return;let a=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(["res","com","ind"].includes(city.g[y][x].t))a.push([x,y]);if(!a.length)return;let z=a[Math.floor(Math.random()*a.length)],x=z[0],y=z[1];if(svc(x,y,"fire",7)&&Math.random()<.75)return toast("🚒 Fire department stopped a fire");Object.assign(city.g[y][x],{t:"empty",l:0,r:0,j:0});city.f-=250;toast("🔥 Building fire: $250 damage")}
+function milestone(){milestones.forEach((m,i)=>{if(city.p>=m.p&&!city.ms.includes(i)){city.ms.push(i);city.f+=m.r;toast("Milestone: "+m.t+" +"+money(m.r))}})}
+function tick(){utilities();sim();milestone();ticks++;if(ticks%5===0){economy();events()}}
+function draw(){
+ X.clearRect(0,0,C.width,C.height);for(let y=0;y<H;y++)for(let x=0;x<W;x++){let q=city.g[y][x],px=x*T,py=y*T;X.fillStyle=M[q.t].c;X.fillRect(px,py,T,T);X.strokeStyle="rgba(0,0,0,.12)";X.strokeRect(px+.5,py+.5,T-1,T-1);
+  if(q.t==="road"){X.fillStyle="#343a43";X.fillRect(px,py,T,T);X.strokeStyle="#d5c467";X.setLineDash([5,5]);X.beginPath();X.moveTo(px+2,py+14);X.lineTo(px+26,py+14);X.stroke();X.setLineDash([])}
+  if(["res","com","ind"].includes(q.t)){X.fillStyle=q.l?"#15202f":"rgba(255,255,255,.18)";let h=5+q.l*5;X.fillRect(px+6,py+T-6-h,T-12,h)}
+  let ic={park:"●",power:"⚡",tower:"💧",fire:"F",police:"P",school:"S"}[q.t];if(ic){X.fillStyle="#07111e";X.font="bold 14px system-ui";X.textAlign="center";X.fillText(ic,px+14,py+19)}
+ }}
+function ui(){
+ $("funds").textContent=money(city.f);$("pop").textContent=city.p.toLocaleString();$("happy").textContent=city.h+"%";$("traffic").textContent=city.tr+"%";$("day").textContent=city.d;$("power").textContent=Math.round(city.pw.use)+"/"+city.pw.cap;$("water").textContent=Math.round(city.wa.use)+"/"+city.wa.cap;$("jobs").textContent=city.e.toLocaleString()+"/"+city.j.toLocaleString();$("cash").textContent=money(city.cash);
+ [["r",city.dem.r],["c",city.dem.c],["i",city.dem.i]].forEach(a=>{let ids=a[0]==="r"?["rd","rdl"]:a[0]==="c"?["cd","cdl"]:["id","idl"];$((ids[0])).style.width=a[1]+"%";$(ids[1]).textContent=a[1]+"%"});
+ let a=[];if(city.pw.use>city.pw.cap)a.push(["bad","⚡ Build more power"]);if(city.wa.use>city.wa.cap)a.push(["bad","💧 Build more water"]);if(city.p>0&&city.j<city.p*.55)a.push(["warn","💼 More jobs are needed"]);if(city.tr<70)a.push(["warn","🚗 Traffic congestion is high"]);if(city.f<2000)a.push(["warn","💰 Budget is low"]);if(!a.length)a.push(["","✅ City systems stable"]);$("alerts").innerHTML=a.map(z=>'<div class="alert '+z[0]+'">'+z[1]+"</div>").join("");
+ $("miles").innerHTML=milestones.map((m,i)=>'<div class="alert">'+(city.ms.includes(i)?"✓ ":"")+m.t+" — "+m.p.toLocaleString()+" people<br><small>Reward "+money(m.r)+"</small></div>").join("")
+}
+function loop(){if(!city.paused){clock+=city.s;if(clock>=30){tick();clock=0}}draw();ui();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+document.querySelectorAll(".spd").forEach(b=>b.onclick=()=>{city.s=+b.dataset.s;city.paused=false;document.querySelectorAll(".spd").forEach(z=>z.classList.toggle("on",z===b));$("pause").classList.remove("on")});
+$("pause").onclick=()=>{city.paused=!city.paused;$("pause").classList.toggle("on",city.paused)};
+[["rt","r","rtx"],["ct","c","ctx"],["it","i","itx"]].forEach(a=>$(a[0]).oninput=e=>{city.tax[a[1]]=+e.target.value;$(a[2]).textContent=e.target.value+"%"});
+$("save").onclick=()=>{localStorage.setItem("metroforge",JSON.stringify(city));toast("City saved")};$("load").onclick=()=>{let s=localStorage.getItem("metroforge");if(!s)return toast("No save found");try{city=JSON.parse(s);toast("City loaded")}catch(e){toast("Save could not load")}};
+$("new").onclick=()=>{if(confirm("Start a new city?")){city=fresh();toast("New city created")}};
+</script>
+</body>
+</html>
