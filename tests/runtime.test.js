@@ -1,6 +1,8 @@
 import {test} from 'node:test';
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
 import * as systems from '../src/systems.js';
+import * as v7 from '../src/v7.js';
+import * as designs from '../src/designs.js';
 import * as v6 from '../src/v6.js';
 test('game runtime keeps utilities, demolition and saves consistent',()=>{
 const html=fs.readFileSync('index.html','utf8'),elements=new Map(),queue=[];
@@ -15,11 +17,11 @@ elements.get('gameCanvas').parentElement=new Element('shell');
 const speeds=[1,2,4].map(n=>{const e=new Element('');e.dataset.speed=''+n;return e;});
 const overlays=['none','land','traffic','pollution','services'].map(n=>{const e=new Element('');e.dataset.overlay=n;return e;});
 const document={getElementById:id=>elements.get(id),querySelector:s=>elements.get(s.slice(1)),createElement:tag=>new Element(tag),querySelectorAll:s=>s==='.tool'?elements.get('toolGrid').children:s==='.speed'?speeds:s==='.overlay'?overlays:[],addEventListener(){},body:{dataset:{}}};
-const storage=new Map();const sandbox={...systems,...v6,document,console,performance,structuredClone,setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:f=>queue.push(f),ResizeObserver:class{observe(){}},localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)},window:{addEventListener(){}},URL,Blob,confirm:()=>true};
+const storage=new Map();const sandbox={...systems,...v6,...v7,...designs,document,console,performance,structuredClone,setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:f=>queue.push(f),ResizeObserver:class{observe(){}},localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)},window:{addEventListener(){}},URL,Blob,confirm:()=>true};
 vm.createContext(sandbox);let source=fs.readFileSync('src/game.js','utf8').replace(/^import.*\n/gm,'');
-source+='\nglobalThis.qa={getCity:()=>city,getCars:()=>cars,build,simulationStep,loadRaw,tileBase,economyDay,gameLoop,reset:()=>{city=freshCity();invalidate()},force:()=>lastPaint=""};';
+source+='\nglobalThis.qa={getCity:()=>city,getCars:()=>cars,build,simulationStep,loadRaw,tileBase,economyDay,gameLoop,reset:()=>{city=freshCity();invalidate()},loadDesign,saveSnapshot,getExpansion:()=>expansion,force:()=>lastPaint=""};';
 vm.runInContext(source,sandbox);const q=sandbox.qa;
-assert.equal(elements.get('toolGrid').children.length,24);
+assert.equal(elements.get('toolGrid').children.length,30);
 q.reset();q.force();q.build(1,36,'residential');q.simulationStep(false);assert.equal(q.getCity().grid[36][1].connected,true);
 for(let i=0;i<30;i++)q.simulationStep();assert.equal(q.getCity().population,0,'no growth without utilities');
 q.force();q.build(2,36,'wind');q.force();q.build(3,36,'waterTower');q.simulationStep(false);
@@ -35,5 +37,11 @@ q.getCity().v6.vehicles=[{id:1,kind:'car',path:[[5,15],[6,15]],index:0,t:.4,spee
 elements.get('saveBtn').onclick();elements.get('loadBtn').onclick();assert.equal(q.getCars().length,1,'paused vehicles render after loading');assert.equal(q.getCity().cashflow,-123);assert.equal(q.getCity().lastPopulation,q.getCity().population);
 const before=q.getCity();assert.throws(()=>q.loadRaw('{'));assert.equal(q.getCity(),before);
 for(let day=0;day<40;day++){q.simulationStep(false);q.economyDay();assert(Number.isFinite(q.getCity().funds));assert(Number.isFinite(q.getCity().v6.budget.net));}
+q.loadDesign('garden');assert(q.getCity().population>500);assert(q.getCity().v7.trains.length>=2);assert(q.getCity().v7.visitors>0);
+const funds=q.getCity().funds;q.getCity().v7.freeBuild=true;q.force();q.build(0,0,'power');assert.equal(q.getCity().funds,funds);q.economyDay();assert.equal(q.getCity().funds,funds,'free mode freezes finances');
+elements.get('saveBtn').onclick();elements.get('loadBtn').onclick();assert(q.getCity().v7.freeBuild);assert(q.getCity().grid[3][5].rail);
+const type=q.getCity().grid[0][1].type;elements.get('editorStart').onclick();elements.get('editorBrush').value='water';q.force();q.build(1,0,'road');assert.equal(q.getCity().grid[0][1].type,'water');elements.get('editorCancel').onclick();assert.equal(q.getCity().grid[0][1].type,type);
+elements.get('editorStart').onclick();elements.get('editorBrush').value='water';q.force();q.build(1,0,'road');elements.get('editorApply').onclick();assert.equal(q.getCity().grid[0][1].type,'water');
+for(const d of designs.DESIGNS){q.loadDesign(d.id);assert(q.getCity().population>500,d.id);assert(q.getCity().power.cap>=q.getCity().power.use,d.id+' power');assert(q.getCity().water.cap>=q.getCity().water.use,d.id+' water');q.economyDay();assert(Number.isFinite(q.getCity().v6.budget.net));}
 for(const b of overlays)b.onclick();for(let i=0;i<100;i++)q.gameLoop(performance.now()+i*17);
 });

@@ -1,5 +1,5 @@
 export const isRoad = type => ['road', 'avenue', 'bridge'].includes(type);
-export const isZone = type => ['residential', 'commercial', 'industrial'].includes(type);
+export const isZone = type => ['residential', 'commercial', 'industrial', 'office'].includes(type);
 export function adjacent(x, y, w, h) {
   return [[x+1,y],[x-1,y],[x,y+1],[x,y-1]].filter(([a,b]) => a>=0 && b>=0 && a<w && b<h);
 }
@@ -70,6 +70,7 @@ export function parseSave(raw, defaults, allowedTypes, w, h) {
     const t={...defaults.grid[0][0],type:c.type};
     for(const k of ['level','district','density','age','distress']) t[k]=Math.floor(finite(c[k],0,k==='age'?1e7:k==='distress'?100:k==='district'?3:k==='level'?4:1,0));
     for(const k of ['trash','stock','goods'])t[k]=finite(c[k],0,k==='goods'?1000:k==='stock'?120:100,k==='stock'&&c.type==='commercial'?25:0);
+    t.rail=c.rail===true;
     t.terrain=c.type==='water'||c.type==='bridge'||c.terrain==='water'?'water':'empty';
     return t;
   }));

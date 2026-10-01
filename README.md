@@ -1,4 +1,4 @@
-# MetroForge V6
+# MetroForge V7
 
 **Build a town. Connect a region. Shape a metropolis.**
 
@@ -10,21 +10,23 @@ MetroForge is an original, free browser city builder inspired by the road planni
 
 If this link shows a 404, enable Pages once: **Settings → Pages → Source: GitHub Actions**. Then open **Actions → Test and deploy MetroForge → Run workflow**. Subsequent pushes to `main` test and deploy automatically.
 
-Use **Showcase** in the Build panel to explore an established city. It starts paused; press Play when you're ready. Showcase replaces the current city, so save or export first.
+Choose **City playground → Load full city** to try any of 15 ready-built layouts, or turn on **Free build** for free construction. Use **Showcase** in the Build panel to explore an established city. It starts paused; press Play when you're ready. Showcase replaces the current city, so save or export first.
 
-## What's new in V6
+## What's new in V7
 
 | System | What you can do |
 |---|---|
-| Traffic queues | Cars, buses and trucks queue behind vehicles, wait at signals, and yield at occupied junctions. |
-| Custom bus lines | Pick stops in order, save a loop, and add up to four buses per line. |
-| Supply chains | Staff factories, move goods by truck, and keep shop inventories stocked. |
-| Garbage | Build garbage depots and watch trucks collect waste before it harms your neighborhoods. |
-| Households | Track families, workers, students, reachable jobs and commute distances per residential property. |
-| Building upgrades | Resolve listed development blockers, upgrade levels, and convert density in the inspector. |
-| Regional map | Plan across 64×40 tiles, with bridges, avenues, wind power and named districts. |
-| Daily budget | See every income and expense category, transit fares, debt payments and the projected net. |
-| Controls & saves | Touch controls, keyboard shortcuts, 500% zoom, JSON backups, and V4/V5 migration. |
+| Free build | Build, demolish and upgrade without construction charges; normal finances are frozen. |
+| 15 full cities | Load garden, river, coastal, industrial, downtown, island, rail, university, eco, tourism, suburban, harbor, boulevard, traffic and balanced layouts. |
+| Passenger rail | Paint tracks through two road-connected stations and watch trains shuttle between them. Nearby home-to-work trips become rail riders. |
+| Cargo rail | Connect terminals by track to move reserved factory goods into shops near the destination terminal, reducing truck deliveries. |
+| Tourism | Build hotels and attractions to attract visitors and earn daily income. |
+| Offices | Create clean jobs; workers and office development need education of at least 45%. Offices use the commercial tax rate. |
+| Emergency response | Fire engines and ambulances follow roads through traffic to incidents, with a 90-second simulation deadline. Test either incident from City report. |
+| Map editor | Pause and paint rivers, land, roads or bridges; Apply keeps edits, Cancel restores the city. Export shares your custom map. |
+| City challenges | Maintain profitable growth, good traffic or tourism for five days to earn a one-time grant. Free build pauses challenge rewards. |
+| Bus editing | Edit names and stops, undo selected stops, and increase or decrease the bus fleet. |
+
 
 V2–V4 systems remain: taxes, municipal loans, service budgets, parks, education, healthcare, safety, recycling, buses, metro capacity, weather, disasters, day/night lighting, missions, and milestones.
 
@@ -64,7 +66,7 @@ Avoid spending all your money on services before you have a tax base. Add a garb
 
 ## Save your work
 
-Save and autosave are stored in this browser on this device. Use **Export** for a portable backup, then **Import** on another device. A V6 load checks V6 slots first, then V5 and V4 saves. Older files migrate automatically into the larger map; utilities and access are recalculated. Browser privacy settings or clearing site data can remove local saves.
+Save and autosave are stored in this browser on this device. Use **Export** for a portable backup, then **Import** on another device. A V7 load checks V7 slots first, then V6, V5 and V4 saves. Rail tracks, free-build mode, incidents and challenge progress persist. Train trips restart on load; reserved cargo is returned to its factory before saving. Emergency crews redispatch to saved incidents. Older files migrate automatically into the larger map; utilities and access are recalculated. Browser privacy settings or clearing site data can remove local saves.
 
 ## Run and test locally
 
@@ -87,6 +89,6 @@ Node 20+ is required for tests; the browser game needs no npm dependencies or bu
 
 ## Scope
 
-This release uses a 64×40 map and Canvas 2D renderer, up to 180 vehicles, grid-based queues and signals, generic goods, per-property waste, and household groups. Bus ridership is estimated from coverage rather than individual passengers. Metro remains a simplified capacity service. Detailed rail, individual pedestrian agents, terrain editing, and a full 3D engine are future work.
+This release uses a 64×40 map and Canvas 2D renderer, up to 180 vehicles, grid-based queues and signals, generic goods, per-property waste, and household groups. Bus ridership is estimated from coverage rather than individual passengers. Metro remains a simplified capacity service. Rail uses orthogonal track corridors with automatic station connections and up to 20 shuttles. Terminals transfer directly to factories/shops within seven tiles; local truck legs and rail signals are not modeled. Tourism and passenger counts are aggregate estimates. Individual pedestrians, realistic train scheduling and a full 3D engine remain future work.
 
-[Changelog](CHANGELOG.md) · [V6 release notes](versions/V6.md) · [V5 release notes](versions/V5.md) · [V4 release plan](docs/V4_BUG_FIX_UI_RELEASE_PLAN.md)
+[Changelog](CHANGELOG.md) · [V7 release notes](versions/V7.md) · [V6 release notes](versions/V6.md) · [V5 release notes](versions/V5.md) · [V4 release plan](docs/V4_BUG_FIX_UI_RELEASE_PLAN.md)

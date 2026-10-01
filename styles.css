@@ -84,3 +84,6 @@ button{border-radius:6px;background:#20363f;transition:background .15s,border-co
 
 /* V6 planning and logistics */
 .route-item{display:flex;flex-wrap:wrap;gap:5px;padding:9px 0;border-bottom:1px solid var(--line)}.route-item span{flex-basis:100%;font-size:10px;line-height:1.5;color:#cfdfdc}.route-item button{font-size:10px;padding:5px 8px}.budget-row{display:flex;justify-content:space-between;gap:8px;font-size:10px;padding:6px 0;border-bottom:1px solid #29414a}.budget-row strong{font-variant-numeric:tabular-nums}.budget-total{display:block;color:var(--accent);font-size:12px;margin-top:10px}.inspector-actions{display:flex;flex-direction:column;gap:6px;margin-top:8px}.inspector-actions button{font-size:10px;min-height:34px}button:disabled{opacity:.45;cursor:not-allowed}.transit-planner{border-left:2px solid #f9aa65;padding-left:10px}#routeList:empty{display:none}
+
+.sandbox-planner{border:1px solid #375f61;border-radius:12px;padding:12px;background:linear-gradient(135deg,#182b37,#163e38)}
+.route-item{flex-wrap:wrap}.route-item span{flex-basis:100%}#designName{color:#9be6bd;font-weight:700}.button-row{flex-wrap:wrap}input[type=checkbox]{accent-color:#80dcb9}

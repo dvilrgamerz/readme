@@ -1,3 +1,12 @@
+# V7 — City Playground
+
+- Free construction with frozen finances and fifteen full-city test layouts.
+- Passenger and cargo rail, tourism, educated office jobs and road emergency response.
+- Transactional map editing, portable custom maps and five-day city challenges.
+- Bus route/name editing, stop undo, fleet reduction and opposing-lane congestion fixes.
+- Validated V7 persistence, legacy migration and cargo-safe save/rebuild behavior.
+- Expanded simulation tests and desktop/mobile Chromium playtests.
+
 # V6 — Traffic & Economy
 
 - 64×40 maps with V4/V5 migration and portable V6 backups.

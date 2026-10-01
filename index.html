@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07101d">
-  <title>MetroForge V6 — City Builder</title>
-  <meta name="description" content="MetroForge V6 is an original browser city-building simulation.">
+  <title>MetroForge V7 — City Builder</title>
+  <meta name="description" content="MetroForge V7 is an original browser city-building simulation.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body data-mobile-panel="map">
@@ -13,7 +13,7 @@
     <header class="topbar">
       <div class="brand">
         <div class="mark">MF</div>
-        <div><h1>MetroForge <em>V6</em></h1><p>YOUR CITY. YOUR RULES.</p></div>
+        <div><h1>MetroForge <em>V7</em></h1><p>YOUR CITY. YOUR RULES.</p></div>
       </div>
       <div class="stats">
         <div class="stat"><span>Funds</span><strong id="funds">$50,000</strong><small id="cashflow">+$0/day</small></div>
@@ -33,6 +33,13 @@
     <nav class="mobile-tabs" aria-label="Game panels"><button id="mapTab" class="active">Map</button><button id="buildTab">Build & manage</button><button id="cityTab">City report</button></nav>
     <main class="layout">
       <aside class="panel left">
+        <section class="sandbox-planner">
+ <div class="section-title"><h2>City playground</h2><span>15 DESIGNS</span></div>
+ <label class="toggle"><input id="freeBuild" type="checkbox"><span>Free build</span><small>Free construction · frozen finances</small></label>
+ <label class="select-row">City design<select id="designSelect"></select></label><p id="designDescription" class="help-text"></p>
+ <button id="loadDesign" class="full">Load full city</button><p id="designName" class="help-text"></p>
+ <p class="help-text">Ready-built layouts with homes, jobs, utilities, bus loops and rail. Load replaces your city; save first.</p>
+ </section>
         <section>
           <div class="section-title"><h2>Build</h2><span id="selectedName">Road</span></div>
           <label class="select-row">Zone density<select id="densitySelect"><option value="0">Low density</option><option value="1">High density · 2.5× capacity</option></select></label>
@@ -51,11 +58,17 @@
           </div>
         </section>
 
-        <section class="transit-planner">
-          <div class="section-title"><h2>Bus line planner</h2><span>V6</span></div>
+
+ <section>
+ <div class="section-title"><h2>Map editor</h2></div><p id="editorStatus" class="help-text"></p>
+ <label class="select-row">Paint<select id="editorBrush" disabled><option value="road">Road</option><option value="avenue">Avenue</option><option value="bridge">Bridge</option><option value="water">River / water</option><option value="empty">Land / erase</option></select></label>
+ <div class="button-row"><button id="editorStart">Edit map</button><button id="editorApply" disabled>Apply</button><button id="editorCancel" disabled>Cancel</button></div>
+ </section>
+ <section class="transit-planner">
+          <div class="section-title"><h2>Bus line planner</h2><span>V7</span></div>
           <p class="help-text">Build bus stops beside roads. Tap stops in order, then save a loop. Each bus costs $18/day.</p>
           <label class="select-row">Line name<input id="routeName" maxlength="32" placeholder="Downtown Loop"></label>
-          <div class="button-row"><button id="newRoute">New line</button><button id="saveRoute" disabled>Save line</button><button id="cancelRoute">Cancel</button></div>
+          <div class="button-row"><button id="newRoute">New line</button><button id="saveRoute" disabled>Save line</button><button id="cancelRoute">Cancel</button><button id="undoStop">Undo stop</button></div>
           <p id="routeDraft" class="help-text"></p><label class="toggle"><input id="showRoutes" type="checkbox" checked><span>Show bus lines on map</span></label>
           <div id="routeList"></div>
         </section>
@@ -93,7 +106,7 @@
       <section class="game-shell">
         <canvas id="gameCanvas" width="1280" height="800" aria-label="City map. Select a tool and drag to build; use Pan to move."></canvas>
         <div class="camera-controls"><button id="zoomOut" aria-label="Zoom out">−</button><span id="zoomLabel">100%</span><button id="zoomIn" aria-label="Zoom in">+</button><button id="resetView">Fit map</button></div>
-        <div class="world-label"><b>METROFORGE</b><span>CONNECTED CITIES · 64×40</span></div>
+        <div class="world-label"><b>METROFORGE</b><span>RAIL & SKYLINES · 64×40</span></div>
         <div id="toast" role="status" class="toast hidden"></div>
         <div id="tooltip" class="tooltip hidden"></div>
         <div id="eventBanner" class="event-banner hidden"></div>
@@ -108,7 +121,10 @@
         <section><div class="section-title"><h2>Property inspector</h2></div><div id="inspector" class="inspector"></div><div class="inspector-actions"><button id="upgradeBuilding" disabled>Upgrade level ($200–800)</button><button id="changeDensity" disabled>Change density</button></div></section>
         <section><div class="section-title"><h2>People & logistics</h2></div><div class="mini-grid">
           <div><span>Households</span><strong id="householdStat">0</strong></div><div><span>Employed / workers</span><strong id="workersStat">0 / 0</strong></div><div><span>Students</span><strong id="studentsStat">0</strong></div><div><span>Queues</span><strong id="queueStat">0</strong></div></div><p id="deliveryStat" class="help-text"></p><p id="garbageStat" class="help-text"></p><p class="help-text">Orange: buses · violet: deliveries · lime: garbage trucks. Red dots: road or utility problems.</p></section>
-        <section><div class="section-title"><h2>Daily budget</h2></div><div id="budgetRows"></div><strong id="budgetTotal" class="budget-total"></strong><p class="help-text">Projected daily totals. Last settled result appears under Funds. Shops without stock pay less tax.</p></section>
+        <section><div class="section-title"><h2>Rail & tourism</h2></div><p id="railSummary" class="help-text"></p><p id="tourismSummary" class="help-text"></p><p class="help-text">Paint rail through two stations or two cargo terminals. Terminals serve factories and shops within 7 tiles. Stations need road access. Visitors need hotels and attractions.</p></section>
+ <section><div class="section-title"><h2>Emergency response</h2></div><p id="emergencySummary" class="help-text"></p><label class="select-row">Test incident<select id="emergencyKind"><option value="fire">Building fire</option><option value="medical">Medical emergency</option></select></label><button id="testEmergency" class="full">Start test incident</button><p class="help-text">Fire engines and ambulances follow roads and wait in traffic. Crews have 90 simulation seconds to arrive.</p></section>
+ <section><div class="section-title"><h2>City challenges</h2></div><label class="select-row">Goal<select id="challengeSelect"><option value="">Choose challenge</option><option value="profit">Profitable city · $5,000</option><option value="traffic">Traffic recovery · $6,000</option><option value="tourism">Visitor destination · $7,000</option></select></label><p id="challengeProgress" class="help-text"></p></section>
+ <section><div class="section-title"><h2>Daily budget</h2></div><div id="budgetRows"></div><strong id="budgetTotal" class="budget-total"></strong><p class="help-text">Projected daily totals. Last settled result appears under Funds. Shops without stock pay less tax.</p></section>
         <section><div class="section-title"><h2>Population history</h2><span>40 days</span></div><canvas id="trendCanvas" width="220" height="55" aria-label="Population trend chart"></canvas></section>
         <section>
           <div class="section-title"><h2>Zone demand</h2></div><p class="help-text">Higher demand means more growth potential, not the share of your city.</p>

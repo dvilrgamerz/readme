@@ -83,14 +83,14 @@ export class TrafficEngine{
   householdPass(){
     const homes=[],jobs=[];let students=0;
     for(let y=0;y<this.grid.length;y++)for(let x=0;x<this.w;x++){
-      const c=this.grid[y][x];if(c.type==='residential'&&c.residents)homes.push({home:[x,y],residents:c.residents,families:Math.ceil(c.residents/4),workers:Math.floor(c.residents*.6),students:Math.floor(c.residents*.2),educated:Math.round(c.education),employed:0,assignments:[]});
-      if(['commercial','industrial'].includes(c.type)&&c.jobs&&c.connected)jobs.push({point:[x,y],remaining:c.jobs});
+      const c=this.grid[y][x];if(['commercial','industrial','office'].includes(c.type))c.staffed=0;if(c.type==='residential'&&c.residents)homes.push({home:[x,y],residents:c.residents,families:Math.ceil(c.residents/4),workers:Math.floor(c.residents*.6),students:Math.floor(c.residents*.2),educated:Math.round(c.education),employed:0,assignments:[]});
+      if(['commercial','industrial','office'].includes(c.type)&&c.jobs&&c.connected)jobs.push({point:[x,y],remaining:c.jobs,type:c.type});
     }
     for(const h of homes){
       students+=h.students;let remaining=h.workers;
       const nearest=jobs.filter(j=>j.remaining>0).sort((a,b)=>distance(h.home,a.point)-distance(h.home,b.point)).slice(0,12);
       for(const j of nearest){
-        if(!remaining)break;const path=this.path(h.home,j.point);if(path.length<1)continue;
+        if(!remaining)break;if(j.type==='office'&&h.educated<45)continue;const path=this.path(h.home,j.point);if(path.length<1)continue;
         const workers=Math.min(remaining,j.remaining);h.assignments.push({work:j.point,workers,path});h.employed+=workers;j.remaining-=workers;remaining-=workers;
       }
       h.commute=h.assignments.length?Math.round(h.assignments.reduce((s,a)=>s+a.path.length*a.workers,0)/Math.max(1,h.employed)):0;
@@ -163,7 +163,7 @@ export class TrafficEngine{
       const nextProgress=v.t+dt*v.speed*(this.pointCell(p)?.type==='avenue'?1.5:1);
       const following=i>0&&nextProgress>lane[i-1].t-.25;
       const red=v.t>=.72&&!this.signalGreen(n,p);
-      const crowded=nextProgress>=1&&(junctions.has(id)||this.state.vehicles.some(other=>other!==v&&same(other.path[other.index],n)&&other.t<.26));
+      const crowded=nextProgress>=1&&(junctions.has(id)||this.state.vehicles.some(other=>other!==v&&same(other.path[other.index],n)&&same(other.path[other.index+1],v.path[v.index+2])&&other.t<.26));
       if(following||red||crowded){v.wait+=dt;blocked++;continue;}
       v.t=nextProgress;
       if(v.t>=1){
@@ -188,6 +188,7 @@ export class TrafficEngine{
     if(v.kind==='garbage'&&isZone(this.pointCell(v.target)?.type)&&this.pointCell(v.source)?.type==='garbage'){
       const c=this.pointCell(v.target),amount=Math.min(c.trash,35);c.trash-=amount;this.state.collected+=amount;
     }
+    if(['fireEngine','ambulance'].includes(v.kind))this.onEmergencyArrival?.(v);
     v.done=true;
   }
   daily(){
@@ -210,22 +211,24 @@ const distance=(a,b)=>Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1]);
 
 export function budgetBreakdown(city,build,routeCount=0){
   const res=city.population*city.taxes.res/100*1.6;
-  let commercial=0,industrial=0,roads=0,zones=0,services=0;
+  let commercial=0,industrial=0,offices=0,roads=0,zones=0,services=0;
   for(const row of city.grid)for(const c of row){
     if(c.type==='commercial')commercial+=c.jobs*city.taxes.com/100*3.5*((c.stock||0)>0?1:.35);
     if(c.type==='industrial')industrial+=c.jobs*city.taxes.ind/100*3*(c.connected?1:0);
+    if(c.type==='office')offices+=(c.staffed||0)*city.taxes.com/100*4;
+    if(c.rail)roads+=1;
     const upkeep=build[c.type]?.upkeep||0;if(isRoad(c.type))roads+=upkeep;else if(isZone(c.type))zones+=upkeep;else services+=upkeep*city.serviceBudget/100;
   }
   const transitExpense=routeCount*18,busFares=city.policies.freeTransit?0:(city.v6?.riders||0)*.18;
   const policyCost=(city.policies.green?60:0)+(city.policies.freeTransit?90:0)+(city.policies.education?80:0);
   const debtPayment=Math.min(city.debt,100);
-  const b={residential:Math.round(res),commercial:Math.round(commercial),industrial:Math.round(industrial),fares:Math.round(busFares),roads:Math.round(roads),zones:Math.round(zones),services:Math.round(services),transit:transitExpense,policies:policyCost,debt:debtPayment};
-  b.income=b.residential+b.commercial+b.industrial+b.fares;b.expense=b.roads+b.zones+b.services+b.transit+b.policies+b.debt;b.net=b.income-b.expense;return b;
+  const b={residential:Math.round(res),commercial:Math.round(commercial),industrial:Math.round(industrial),offices:Math.round(offices),tourism:Math.round(city.v7?.tourismIncome||0),fares:Math.round(busFares),roads:Math.round(roads),zones:Math.round(zones),services:Math.round(services),transit:transitExpense,policies:policyCost,debt:debtPayment};
+  b.income=b.residential+b.commercial+b.industrial+b.offices+b.tourism+b.fares;b.expense=b.roads+b.zones+b.services+b.transit+b.policies+b.debt;b.net=b.income-b.expense;return b;
 }
 export function developmentBlockers(c,tax=9){
   const blockers=[];
   if(!c.connected)blockers.push('Connect a road to the highway');if(!c.powered)blockers.push('Supply electricity');if(!c.watered)blockers.push('Supply water');
   if(c.trash>50)blockers.push('Garbage is piling up');if(c.type==='commercial'&&c.stock<5)blockers.push('Shops need factory deliveries');
   if(c.density&&c.education<45)blockers.push('Improve education for high density');if(tax>12)blockers.push('High taxes discourage growth');
-  if(c.pollution>50)blockers.push('Reduce pollution');return blockers;
+  if(c.pollution>50)blockers.push('Reduce pollution');if(c.type==='office'&&c.education<45)blockers.push('Offices need education of at least 45%');if(c.distress>=8)blockers.push('Abandoned: restore services to recover');return blockers;
 }

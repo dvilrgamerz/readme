@@ -8,7 +8,7 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:900}});
  page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
  for(let n=0;n<40;n++){try{await page.goto('http://127.0.0.1:8000');break;}catch{if(n===39)throw Error('Test server failed to start');}}
- await page.locator('[data-tool="garbage"]').waitFor();assert.equal(await page.locator('.tool').count(),24);
+ await page.locator('[data-tool="garbage"]').waitFor();assert.equal(await page.locator('.tool').count(),30);
  await page.locator('#demoBtn').click();await page.locator('#population').filter({hasNotText:/^0$/}).waitFor();
  await page.locator('#newRoute').click();
  const tile=async(x,y)=>{const r=await page.locator('#gameCanvas').boundingBox();await page.mouse.click(r.x+r.width*(x+.5)/64,r.y+r.height*(y+.5)/40);};
@@ -17,23 +17,39 @@ try{
  await page.locator('[data-tool="inspect"]').click();await tile(6,10);await page.locator('#upgradeBuilding').click();
  await page.locator('#zoomIn').click();assert.equal(await page.locator('#zoomLabel').textContent(),'120%');await page.locator('#resetView').click();
  await page.locator('[data-tool="signal"]').click();await tile(12,15);await page.locator('#saveBtn').click();
- const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v6-save')));
- assert.equal(saved.version,6);assert.equal(saved.city.grid.length,40);assert.equal(saved.city.v6.routes.length,2);assert.equal(saved.city.v6.signals[15*64+12],false);
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')));
+ assert.equal(saved.version,7);assert.equal(saved.city.grid.length,40);assert.equal(saved.city.v6.routes.length,2);assert.equal(saved.city.v6.signals[15*64+12],false);
  await page.locator('[data-speed="4"]').click();await page.waitForTimeout(2500);await page.locator('#pauseBtn').click();
- await page.locator('#saveBtn').click();const inFlight=await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v6-save')).city.v6.vehicles.length);await page.locator('#loadBtn').click();await page.locator('#saveBtn').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v6-save')).city.v6.vehicles.length),inFlight);
- await page.locator('[data-tool="inspect"]').click();await page.screenshot({path:'qa-artifacts/desktop-v6.png'});
+ await page.locator('#saveBtn').click();const inFlight=await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.v6.vehicles.length);await page.locator('#loadBtn').click();await page.locator('#saveBtn').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.v6.vehicles.length),inFlight);
+ await page.locator('[data-tool="inspect"]').click();await page.screenshot({path:'qa-artifacts/desktop-v7.png'});
  const frames=await page.evaluate(async()=>{
    const stamps=[];await new Promise(resolve=>{function step(t){stamps.push(t);if(stamps.length===61)resolve();else requestAnimationFrame(step);}requestAnimationFrame(step);});return stamps.slice(1).map((t,i)=>t-stamps[i]);
  });
  console.log('Paused desktop frame median ms:',frames.sort((a,b)=>a-b)[Math.floor(frames.length/2)]);
+ // V7 playground: real controls, all 15 templates, free costs and editor transactions.
+ assert.equal(await page.locator('#designSelect option').count(),15);
+ for(const id of ['garden','river','coastal','industrial','downtown','islands','rail','university','eco','tourism','suburbs','harbor','boulevard','traffic','balanced']){
+   await page.locator('#designSelect').selectOption(id);await page.locator('#loadDesign').click();await page.locator('#saveBtn').click();
+   const c=await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city);assert(c.population>500,id);assert(c.power.cap>=c.power.use,id);assert(c.water.cap>=c.water.use,id);
+ }
+ await page.locator('#freeBuild').check();await page.locator('#saveBtn').click();const beforeFree=await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.funds);
+ await page.locator('[data-tool="power"]').click();await tile(0,0);await page.locator('#saveBtn').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.funds),beforeFree);
+ await page.locator('#editorStart').click();await page.locator('#editorBrush').selectOption('water');await tile(1,0);await page.locator('#editorCancel').click();await page.locator('#saveBtn').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.grid[0][1].type),'empty');
+ await page.locator('#editorStart').click();await page.locator('#editorBrush').selectOption('water');await tile(1,0);await page.locator('#editorApply').click();await page.locator('#saveBtn').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.grid[0][1].type),'water');
+ await page.locator('#loadBtn').click();assert(await page.locator('#freeBuild').isChecked());
+ await page.locator('#designSelect').selectOption('tourism');await page.locator('#loadDesign').click();await page.locator('#testEmergency').click();await page.locator('[data-speed="4"]').click();await page.waitForTimeout(3500);await page.locator('#pauseBtn').click();
+ await page.locator('#saveBtn').click();const v7City=await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city);assert(v7City.v7.visitors>=100);assert(v7City.v7.incidents.length+v7City.v7.resolved>0);
+ const activeFrames=await page.evaluate(async()=>{document.querySelector('[data-speed="1"]').click();const stamps=[];await new Promise(resolve=>{function step(t){stamps.push(t);if(stamps.length===121)resolve();else requestAnimationFrame(step);}requestAnimationFrame(step);});document.querySelector('#pauseBtn').click();return stamps.slice(1).map((t,i)=>t-stamps[i]).sort((a,b)=>a-b);});
+ console.log('Active full city frame median ms:',activeFrames[60]);await page.evaluate(()=>{document.querySelector('.left').scrollTop=0;document.querySelector('.right').scrollTop=0;});await page.screenshot({path:'qa-artifacts/playground-v7.png'});
  const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});mobile.on('pageerror',e=>errors.push(e.message));mobile.on('dialog',d=>d.accept());
  await mobile.goto('http://127.0.0.1:8000');await mobile.locator('[data-tool="garbage"]').waitFor({state:'attached'});
  await mobile.locator('#buildTab').click();assert(await mobile.locator('#districtPolicy').isVisible());await mobile.locator('#demoBtn').click();await mobile.locator('[data-tool="residential"]').click();await mobile.locator('#mapTab').click();
  const r=await mobile.locator('#gameCanvas').boundingBox();await mobile.touchscreen.tap(r.x+r.width*2.5/64,r.y+r.height*26.5/40);
- await mobile.locator('#buildTab').click();await mobile.locator('#saveBtn').click();assert.equal(await mobile.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v6-save')).city.grid[26][2].type),'residential');await mobile.locator('#mapTab').click();
- await mobile.locator('#zoomIn').click();await mobile.locator('#resetView').click();await mobile.screenshot({path:'qa-artifacts/mobile-map-v6.png'});
- await mobile.locator('#cityTab').click();assert(await mobile.locator('#budgetTotal').isVisible());await mobile.screenshot({path:'qa-artifacts/mobile-report-v6.png'});
+ await mobile.locator('#buildTab').click();await mobile.locator('#saveBtn').click();assert.equal(await mobile.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.grid[26][2].type),'residential');await mobile.locator('#mapTab').click();
+ await mobile.locator('#zoomIn').click();await mobile.locator('#resetView').click();await mobile.screenshot({path:'qa-artifacts/mobile-map-v7.png'});
+ await mobile.locator('#buildTab').click();await mobile.locator('#designSelect').selectOption('river');await mobile.locator('#loadDesign').click();await mobile.locator('#freeBuild').check();await mobile.locator('#saveBtn').click();assert(await mobile.locator('#freeBuild').isChecked());await mobile.locator('#mapTab').click();await mobile.screenshot({path:'qa-artifacts/mobile-playground-v7.png'});
+ await mobile.locator('#cityTab').click();assert(await mobile.locator('#budgetTotal').isVisible());await mobile.screenshot({path:'qa-artifacts/mobile-report-v7.png'});
  assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
- assert.deepEqual(errors,[]);await fs.writeFile('qa-artifacts/results.json',JSON.stringify({passed:true,errors,desktopFrameMedianMs:frames[Math.floor(frames.length/2)],checks:['boot','showcase','route planning','building upgrade','signals','save/load','camera','simulation','mobile navigation','touch','budget','horizontal overflow']},null,2));
+ assert.deepEqual(errors,[]);await fs.writeFile('qa-artifacts/results.json',JSON.stringify({passed:true,errors,desktopFrameMedianMs:frames[Math.floor(frames.length/2)],activeFullCityFrameMedianMs:activeFrames[60],checks:['boot','showcase','route planning','building upgrade','signals','save/load','camera','simulation','mobile navigation','touch','budget','horizontal overflow','15 designs','free build','map editor apply/cancel','V7 save migration','tourism','emergency dispatch','active full-city performance']},null,2));
  console.log('Browser checks passed. Screenshots saved in qa-artifacts.');
 }finally{await browser.close();server.kill();}
