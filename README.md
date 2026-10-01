@@ -59,6 +59,14 @@ MetroForge has now gone through three major expansion stages:
 - Responsive UI
 - Mouse-wheel zoom
 
+## 🛠️ V4 Bug Fix + UI + Release Plan
+
+See the full implementation checklist:
+
+**[MetroForge V4: Bug Fixes, UI Audit, and Release Plan](docs/V4_BUG_FIX_UI_RELEASE_PLAN.md)**
+
+The plan covers stability fixes, roads/avenues, zoning, utilities, save/load, policies, overlays, districts, traffic/transit, weather/disasters, missions, desktop/mobile UI, accessibility, performance, automated tests, QA, and the V4 release sequence.
+
 ## How to Play
 
 1. Connect your starter road to the city.
