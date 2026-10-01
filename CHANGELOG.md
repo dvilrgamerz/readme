@@ -1,3 +1,11 @@
+# V7.1 — Land Expansion
+
+- Start new cities with A4 and purchase adjoining 16×10 plots in the 4×4 region.
+- Regional map boundaries, ownership shading, current prices and phone-friendly plot selection.
+- Construction and editing respect ownership; free build offers free claims.
+- Validated ownership saves, full-region legacy migration and unlocked showcase/test cities.
+- Land-purchase, rejected construction, funds, persistence and touch-control checks.
+
 # V7 — City Playground
 
 - Free construction with frozen finances and fifteen full-city test layouts.

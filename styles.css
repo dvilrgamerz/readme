@@ -87,3 +87,5 @@ button{border-radius:6px;background:#20363f;transition:background .15s,border-co
 
 .sandbox-planner{border:1px solid #375f61;border-radius:12px;padding:12px;background:linear-gradient(135deg,#182b37,#163e38)}
 .route-item{flex-wrap:wrap}.route-item span{flex-basis:100%}#designName{color:#9be6bd;font-weight:700}.button-row{flex-wrap:wrap}input[type=checkbox]{accent-color:#80dcb9}
+
+.land-planner{border:1px solid #42696a;background:#172e36;border-radius:12px;padding:12px}.plot-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:10px}.plot-button{min-width:0;min-height:37px;padding:4px;font-size:11px}.plot-button.owned{background:#245343;color:#a9efc9}.plot-button.available{border-color:#b38d52;color:#ffdd9c}.plot-button.locked{color:#92a7b0}.plot-button.selected{outline:2px solid #fff}#buyPlot{border-color:#62bb9b}

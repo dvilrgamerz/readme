@@ -1,3 +1,4 @@
+import {ALL_PLOTS,newLand,sanitiseLand,plotAt,plotName,plotBounds,ownsTile,plotOffer,purchasePlot} from "./land.js";
 import {newV7,sanitiseV7,ExpansionEngine,CHALLENGES} from "./v7.js";
 import {DESIGNS,cityDesign} from "./designs.js";
 import {newV6, sanitiseV6, TrafficEngine, budgetBreakdown, developmentBlockers, tileId} from "./v6.js";
@@ -45,7 +46,7 @@ const BUILD = {
 };
 
 const TOOLS = [
-  ["inspect","⌕"],["pan","✥"],["road","🛣️"],["avenue","🛤️"],["bridge","🌉"],["wind","🌬️"],["residential","🏠"],["commercial","🏪"],
+  ["inspect","⌕"],["pan","✥"],["purchase","🗺️"],["road","🛣️"],["avenue","🛤️"],["bridge","🌉"],["wind","🌬️"],["residential","🏠"],["commercial","🏪"],
   ["office","🏢"],["rail","═"],["station","🚆"],["cargoTerminal","📦"],["hotel","🏨"],["attraction","🎡"],["industrial","🏭"],["park","🌳"],["power","⚡"],["waterTower","💧"],
   ["fire","🚒"],["police","🚓"],["school","🏫"],["hospital","🏥"],
   ["bus","🚌"],["metro","🚇"],["recycle","♻️"],["garbage","🚛"],["route","🚌"],["signal","🚦"],["district","◫"],["bulldoze","🧨"]
@@ -67,6 +68,7 @@ const MISSIONS = [
   {id:"green",title:"Cleaner Air",text:"Keep pollution at or below {target}%",reward:1700}
 ];
 
+let selectedLandPlot=12;
 let selected = "road";
 let overlay = "none";
 let pointerDown = false;
@@ -133,7 +135,7 @@ function newMission(city){
 
 function freshCity(){
   const c = {
-    grid:generateMap(), funds:50000, debt:0, population:0, lastPopulation:0, jobs:0, employed:0,
+    grid:generateMap(), land:newLand(), funds:50000, debt:0, population:0, lastPopulation:0, jobs:0, employed:0,
     happiness:55, traffic:100, health:50, education:0, crime:0, pollutionAvg:0, landValue:50,
     transitRiders:0, day:1, year:1, hour:8, paused:false, speed:1,
     taxes:{res:9,com:9,ind:9}, serviceBudget:100,
@@ -188,16 +190,17 @@ function count(type){
 function setTool(tool){
   selected = tool;
   document.querySelectorAll(".tool").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));
-  const meta = tool==="bulldoze" ? {name:"Bulldoze"} : BUILD[tool] || {name:tool==="inspect"?"Inspect":tool==="route"?"Bus route":tool==="signal"?"Traffic lights":"Pan"};
+  const meta = tool==="bulldoze" ? {name:"Bulldoze"} : BUILD[tool] || {name:tool==="purchase"?"Expand city":tool==="inspect"?"Inspect":tool==="route"?"Bus route":tool==="signal"?"Traffic lights":"Pan"};
   $("selectedName").textContent = meta?.name || tool;
-  $("modeHint").textContent = tool==="route"?"Tap connected bus stops in order, then Save line" : tool==="signal"?"Tap a junction to toggle its lights" : tool==="inspect"?"Select a building to inspect" : tool==="pan"?"Drag the map to move" : tool==="district" ? "Paint districts by clicking land" : tool==="bulldoze" ? "Remove buildings and roads" : "Drag to build "+(meta?.name||tool);
+  mapDirty=true;
+  $("modeHint").textContent = tool==="purchase"?"Select a neighboring plot, then Buy plot in Build & manage":tool==="route"?"Tap connected bus stops in order, then Save line" : tool==="signal"?"Tap a junction to toggle its lights" : tool==="inspect"?"Select a building to inspect" : tool==="pan"?"Drag the map to move" : tool==="district" ? "Paint districts by clicking land" : tool==="bulldoze" ? "Remove buildings and roads" : "Drag to build "+(meta?.name||tool);
 }
 
 function makeTools(){
   const g = $("toolGrid");
   g.replaceChildren();
   for(const [key,icon] of TOOLS){
-    const meta = key==="bulldoze" ? {name:"Bulldoze",cost:5} : BUILD[key] || {name:key==="inspect"?"Inspect":key==="route"?"Bus route":key==="signal"?"Traffic lights":"Pan",cost:0};
+    const meta = key==="bulldoze" ? {name:"Bulldoze",cost:5} : BUILD[key] || {name:key==="purchase"?"Expand city":key==="inspect"?"Inspect":key==="route"?"Bus route":key==="signal"?"Traffic lights":"Pan",cost:0};
     const b = document.createElement("button");
     b.className="tool";
     b.dataset.tool=key;
@@ -218,6 +221,8 @@ function build(x,y,tool=selected){
   const cell=city.grid[y]?.[x];if(!cell) return;
   if(tool==='inspect'){inspectTile={x,y};updateInspector();mapDirty=true;return;}
   if(tool==='pan') return;
+  if(tool==='purchase'){selectLandPlot(plotAt(x,y,W,H));return;}
+  if(!ownsTile(city,x,y)){selectLandPlot(plotAt(x,y,W,H));showToast('Buy plot '+plotName(selectedLandPlot)+' before building here. Choose Expand city.');return;}
   if(tool==='route'){
     if(cell.type!=='bus'||!cell.connected)return showToast('Choose connected bus stops. Build at least two first.');
     if(!drawingRoute){routeDraft=[];drawingRoute=true;}
@@ -279,7 +284,7 @@ canvas.addEventListener('pointermove',e=>{
   const tip=$('tooltip'),r=canvas.parentElement.getBoundingClientRect();
   tip.style.left=clamp(e.clientX-r.left+14,8,Math.max(8,r.width-190))+'px';
   tip.style.top=clamp(e.clientY-r.top+12,8,Math.max(8,r.height-120))+'px';
-  tip.textContent=BUILD[c.type].name+(c.level?' • Level '+c.level:'')+(isZone(c.type)?' • '+(c.connected?'Road access':'No road access'):'');
+  tip.textContent=(!ownsTile(city,p.x,p.y)?'Unowned plot '+plotName(plotAt(p.x,p.y,W,H))+' • ':'' )+BUILD[c.type].name+(c.level?' • Level '+c.level:'')+(isZone(c.type)?' • '+(c.connected?'Road access':'No road access'):'');
   tip.classList.remove('hidden');
 });
 function endDrag(){pointerDown=false;lastPaint='';lastTile=null;dragStart=null;}
@@ -614,7 +619,7 @@ function draw(){
   if(mapDirty){
     const main=ctx;ctx=mapCtx;ctx.clearRect(0,0,canvas.width,canvas.height);
     for(let y=0;y<H;y++)for(let x=0;x<W;x++)drawBaseCell(city.grid[y][x],x,y);
-    ctx=main;mapDirty=false;
+    drawLandPlots();ctx=main;mapDirty=false;
   }
   ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(mapLayer,0,0);
   drawTransitLines();drawV7();drawCars();drawWeatherAndNight();
@@ -622,7 +627,7 @@ function draw(){
 }
 
 function updateUI(){
-  updateInspector();updateAdviser();drawTrends();updateV6UI();updateV7UI();
+  updateInspector();updateAdviser();drawTrends();updateV6UI();updateV7UI();updateLandUI();
   $("funds").textContent=city.v7.freeBuild?"FREE BUILD":money(city.funds);
   $("cashflow").textContent=(city.cashflow>=0?"+":"")+money(city.cashflow)+"/day";
   $("population").textContent=city.population.toLocaleString();
@@ -747,9 +752,9 @@ function storeCity(key){
 function loadRaw(raw){
   const next=parseSave(raw,freshCity(),Object.keys(BUILD),W,H);
   if(next.mission){const template=MISSIONS.find(m=>m.id===next.mission.id);next.mission={...template,...next.mission};}
-  const input=JSON.parse(raw);next.v6=sanitiseV6((input.city||input).v6,next.grid);next.v7=sanitiseV7((input.city||input).v7,next.grid);
+  const input=JSON.parse(raw);next.v6=sanitiseV6((input.city||input).v6,next.grid);next.v7=sanitiseV7((input.city||input).v7,next.grid);next.land=sanitiseLand((input.city||input).land);
   next.v6.vehicles=next.v6.vehicles.filter(v=>!['fireEngine','ambulance'].includes(v.kind)||next.v7.incidents.some(i=>i.id===v.incidentId&&i.target[0]===v.target?.[0]&&i.target[1]===v.target?.[1]&&next.grid[v.source[1]][v.source[0]].type===(v.kind==='fireEngine'?'fire':'hospital')));
-  city=next;editorBackup=null;editingRoute=null;transport=null;routeDraft=[];drawingRoute=false;cars=[];rain=[];if(city.weather==="Rain"||city.weather==="Storm")for(let i=0;i<150;i++)rain.push({x:rand(0,canvas.width),y:rand(0,canvas.height),s:rand(5,12)});simAccumulator=0;inspectTile=null;invalidate();simulationStep(false);city.lastPopulation=city.population;makeTools();syncControls();syncV5Controls();updateUI();
+  selectedLandPlot=12;city=next;editorBackup=null;editingRoute=null;transport=null;routeDraft=[];drawingRoute=false;cars=[];rain=[];if(city.weather==="Rain"||city.weather==="Storm")for(let i=0;i<150;i++)rain.push({x:rand(0,canvas.width),y:rand(0,canvas.height),s:rand(5,12)});simAccumulator=0;inspectTile=null;invalidate();simulationStep(false);city.lastPopulation=city.population;makeTools();syncControls();syncV5Controls();updateUI();
 }
 $('saveBtn').onclick=()=>{if(storeCity('metroforge-v7-save'))showToast('City saved.');};
 $('loadBtn').onclick=()=>{
@@ -848,7 +853,7 @@ window.addEventListener('keydown',e=>{
 });
 $('demoBtn').onclick=()=>{
   if(!confirm('Start a fresh showcase city? Save or export your current city first.'))return;
-  city=freshCity();editorBackup=null;editingRoute=null;transport=null;routeDraft=[];drawingRoute=false;
+  city=freshCity();city.land=newLand(true);editorBackup=null;editingRoute=null;transport=null;routeDraft=[];drawingRoute=false;
   const put=(x,y,type,level=0)=>{const t=tileBase(type);t.level=level;city.grid[y][x]=t;};
   for(let x=0;x<27;x++)put(x,27,'avenue');
   for(const y of [9,15,21])for(let x=5;x<27;x++)put(x,y,'road');
@@ -907,15 +912,15 @@ $('saveRoute').onclick=()=>{
   const id=editingRoute||city.v6.nextRouteId++,previous=city.v6.routes.find(r=>r.id===id);city.v6.routes=city.v6.routes.filter(r=>r.id!==id);city.v6.vehicles=city.v6.vehicles.filter(v=>v.routeId!==id);city.v6.routes.push({id,name:$('routeName').value.trim().slice(0,32)||'Bus line '+id,stops:routeDraft.map(p=>[...p]),buses:previous?.buses||1});editingRoute=null;drawingRoute=false;routeDraft=[];transport.rebuild();transport.transitPass();setTool('inspect');updateRouteUI();showToast('Bus line saved. Buses cost $18/day each.');
 };
 $('upgradeBuilding').onclick=()=>{
-  if(!inspectTile)return;const c=city.grid[inspectTile.y][inspectTile.x],tax=c.type==='residential'?city.taxes.res:['commercial','office'].includes(c.type)?city.taxes.com:city.taxes.ind;
+  if(!inspectTile)return;if(!ownsTile(city,inspectTile.x,inspectTile.y))return showToast('Buy this plot before upgrading.');const c=city.grid[inspectTile.y][inspectTile.x],tax=c.type==='residential'?city.taxes.res:['commercial','office'].includes(c.type)?city.taxes.com:city.taxes.ind;
   if(!isZone(c.type)||c.level>=4||developmentBlockers(c,tax).length)return showToast('Resolve the listed development blockers first.');
   const cost=(c.level+1)*200;if(!city.v7.freeBuild&&city.funds<cost)return showToast('Need '+money(cost)+' to upgrade.');if(!city.v7.freeBuild)city.funds-=cost;c.level++;simulationStep(false);updateUI();mapDirty=true;
 };
 $('changeDensity').onclick=()=>{
-  if(!inspectTile)return;const c=city.grid[inspectTile.y][inspectTile.x];if(!isZone(c.type))return;const cost=c.density?150:350;
+  if(!inspectTile)return;if(!ownsTile(city,inspectTile.x,inspectTile.y))return showToast('Buy this plot before upgrading.');const c=city.grid[inspectTile.y][inspectTile.x];if(!isZone(c.type))return;const cost=c.density?150:350;
   if(!city.v7.freeBuild&&city.funds<cost)return showToast('Need '+money(cost)+' to convert.');if(!city.v7.freeBuild)city.funds-=cost;c.density=c.density?0:1;simulationStep(false);updateUI();mapDirty=true;
 };
-initV7();simulationStep();syncControls();syncV5Controls();updateUI();applyCamera();
+initLand();initV7();simulationStep();syncControls();syncV5Controls();updateUI();applyCamera();
 
 function initV7(){
  const select=$('designSelect');for(const d of DESIGNS){const o=document.createElement('option');o.value=d.id;o.textContent=d.name;select.appendChild(o);}select.value=DESIGNS[0].id;
@@ -931,7 +936,7 @@ function initV7(){
  $('undoStop').onclick=()=>{routeDraft.pop();updateRouteUI();};
 }
 function loadDesign(id){
- const free=city.v7.freeBuild,layout=cityDesign(id,tileBase,W,H);editorBackup=null;city=freshCity();city.grid=layout.grid;city.v7.freeBuild=free;city.v7.design=layout.design.name;
+ const free=city.v7.freeBuild,layout=cityDesign(id,tileBase,W,H);editorBackup=null;city=freshCity();city.land=newLand(true);city.grid=layout.grid;city.v7.freeBuild=free;city.v7.design=layout.design.name;
  city.v6.routes=[layout.route];city.v6.nextRouteId=2;city.paused=true;city.funds=100000;city.policies.education=true;
  if(id==='eco'||id==='garden')city.policies.green=true;
  transport=null;routeDraft=[];drawingRoute=false;editingRoute=null;inspectTile=null;cars=[];rain=[];simAccumulator=0;invalidate();simulationStep(false);city.lastPopulation=city.population;makeTools();syncControls();syncV5Controls();updateUI();camera={zoom:1,x:0,y:0};applyCamera();showToast(layout.design.name+' loaded. Press Play to test or turn on Free build.');
@@ -944,7 +949,7 @@ function updateV7UI(){
  $('challengeSelect').value=s.challenge||'';const challenge=CHALLENGES.find(c=>c.id===s.challenge);
  $('challengeProgress').textContent=challenge?(s.completed.includes(challenge.id)?'Completed! '+money(challenge.reward)+' awarded.':challenge.text+' · '+s.streak+'/5 days'+(s.freeBuild?' · turn off Free build to earn rewards':'')):'Choose a challenge to earn a city grant.';
  $('editorStatus').textContent=editorBackup?'EDITING — simulation paused. Terrain painting replaces properties.':'Customize terrain and roads. Export your city to share the map.';
- $('editorStart').disabled=!!editorBackup;$('editorApply').disabled=!editorBackup;$('editorCancel').disabled=!editorBackup;$('editorBrush').disabled=!editorBackup;
+ $('editorStart').disabled=!!editorBackup;updateLandUI();$('editorApply').disabled=!editorBackup;$('editorCancel').disabled=!editorBackup;$('editorBrush').disabled=!editorBackup;
 }
 function drawV7(){
  if(overlay!=='none'&&overlay!=='traffic')return;
@@ -953,5 +958,27 @@ function drawV7(){
  for(const [a,b]of expansion.railSegments){ctx.beginPath();ctx.moveTo((a[0]+.5)*TILE,(a[1]+.5)*TILE);ctx.lineTo((b[0]+.5)*TILE,(b[1]+.5)*TILE);ctx.stroke();}
  for(const t of city.v7.trains){const a=t.path[t.index],b=t.path[t.index+1];if(!b)continue;const x=(a[0]+.5+(b[0]-a[0])*t.t)*TILE,y=(a[1]+.5+(b[1]-a[1])*t.t)*TILE;ctx.fillStyle=t.type==='station'?'#ffdc75':'#c8a9f5';ctx.fillRect(x-6,y-3,12,6);}
  for(const i of city.v7.incidents){ctx.strokeStyle=i.kind==='fire'?'#ff526b':'#f9fafb';ctx.lineWidth=3;ctx.strokeRect(i.target[0]*TILE+2,i.target[1]*TILE+2,TILE-4,TILE-4);ctx.fillStyle=ctx.strokeStyle;ctx.font='bold 11px system-ui';ctx.fillText(Math.ceil(i.remaining),i.target[0]*TILE+12,i.target[1]*TILE-1);}
+ ctx.lineWidth=1;
+}
+
+function selectLandPlot(id){if(!ALL_PLOTS.includes(id))return;selectedLandPlot=id;mapDirty=true;updateLandUI();}
+function initLand(){
+ for(const id of ALL_PLOTS){const button=document.createElement('button');button.dataset.plot=id;button.onclick=()=>{selectLandPlot(id);setTool('purchase');};$('plotGrid').appendChild(button);}
+ $('expandCity').onclick=()=>{setTool('purchase');selectLandPlot(ALL_PLOTS.find(id=>plotOffer(city,id).eligible)??city.land.owned[0]);showToast('Choose a bordering plot on the map or in the plot grid.');};
+ $('buyPlot').onclick=()=>{if(editorBackup)return showToast('Apply or cancel map edits before buying land.');const result=purchasePlot(city,selectedLandPlot);if(!result.success)return showToast(result.reason);invalidate();updateLandUI();updateUI();showToast('Plot '+plotName(selectedLandPlot)+(result.price?' purchased for '+money(result.price):' claimed for free')+'. You can build here now.');};
+}
+function updateLandUI(){
+ $('landSummary').textContent=city.land.owned.length+'/16 plots owned · '+city.land.owned.length*160+' tiles unlocked';
+ const offer=plotOffer(city,selectedLandPlot),owned=city.land.owned.includes(selectedLandPlot);$('plotDetails').textContent='Plot '+plotName(selectedLandPlot)+' · 16×10 tiles · '+(owned?'Owned':(offer.price?money(offer.price):'Free')+' · '+offer.reason);
+ $('buyPlot').disabled=!offer.eligible||!!editorBackup;$('buyPlot').textContent=owned?'Plot owned':offer.price?'Buy plot · '+money(offer.price):'Claim plot · Free';
+ for(const button of $('plotGrid').children){const id=Number(button.dataset.plot),has=city.land.owned.includes(id),offer=plotOffer(city,id);button.textContent=plotName(id)+(has?' ✓':offer.eligible?' +':'');button.title=has?'Owned':offer.reason+' · '+money(offer.price);button.className='plot-button'+(has?' owned':offer.eligible?' available':' locked')+(id===selectedLandPlot?' selected':'');button.setAttribute?.('aria-label','Plot '+plotName(id)+' '+(has?'owned':offer.reason));}
+}
+function drawLandPlots(){
+ const expand=selected==='purchase';ctx.textAlign='center';
+ for(const id of ALL_PLOTS){const b=plotBounds(id,W,H),x=b.x*TILE,y=b.y*TILE,w=b.width*TILE,h=b.height*TILE,owned=city.land.owned.includes(id),offer=plotOffer(city,id);
+  if(!owned){ctx.fillStyle='rgba(4,14,23,.67)';ctx.fillRect(x,y,w,h);}
+  if(expand||!owned){ctx.strokeStyle=id===selectedLandPlot&&expand?'#ffffff':owned?'#81e7b0':offer.eligible?'#ffd281':'rgba(131,158,175,.4)';ctx.lineWidth=id===selectedLandPlot&&expand?4:2;ctx.strokeRect(x+2,y+2,w-4,h-4);}
+  if(expand){ctx.fillStyle=owned?'#8ff0b7':offer.eligible?'#ffe0a5':'#a1b4bf';ctx.font='bold 27px system-ui';ctx.fillText(plotName(id)+(owned?' · OWNED':''),x+w/2,y+h/2-12);ctx.font='20px system-ui';ctx.fillText(owned?'Build here':(offer.price?money(offer.price):'FREE')+' · '+(offer.eligible?'Available':'Locked'),x+w/2,y+h/2+22);}
+ }
  ctx.lineWidth=1;
 }

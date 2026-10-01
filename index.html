@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07101d">
-  <title>MetroForge V7 — City Builder</title>
-  <meta name="description" content="MetroForge V7 is an original browser city-building simulation.">
+  <title>MetroForge V7.1 — City Builder</title>
+  <meta name="description" content="MetroForge V7.1 is an original browser city-building simulation.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body data-mobile-panel="map">
@@ -13,7 +13,7 @@
     <header class="topbar">
       <div class="brand">
         <div class="mark">MF</div>
-        <div><h1>MetroForge <em>V7</em></h1><p>YOUR CITY. YOUR RULES.</p></div>
+        <div><h1>MetroForge <em>V7.1</em></h1><p>YOUR CITY. YOUR RULES.</p></div>
       </div>
       <div class="stats">
         <div class="stat"><span>Funds</span><strong id="funds">$50,000</strong><small id="cashflow">+$0/day</small></div>
@@ -33,6 +33,12 @@
     <nav class="mobile-tabs" aria-label="Game panels"><button id="mapTab" class="active">Map</button><button id="buildTab">Build & manage</button><button id="cityTab">City report</button></nav>
     <main class="layout">
       <aside class="panel left">
+        <section class="land-planner">
+ <div class="section-title"><h2>Land expansion</h2><span>REGION</span></div><p id="landSummary" class="help-text"></p>
+ <button id="expandCity" class="full">Expand city · Buy land</button>
+ <div id="plotGrid" class="plot-grid" aria-label="Region land plots"></div><p id="plotDetails" class="help-text"></p><button id="buyPlot" class="full" disabled>Choose a plot</button>
+ <p class="help-text">Start in A4. Buy bordering plots to unlock construction. Prices rise as you expand. Free build lets you claim land for free.</p>
+ </section>
         <section class="sandbox-planner">
  <div class="section-title"><h2>City playground</h2><span>15 DESIGNS</span></div>
  <label class="toggle"><input id="freeBuild" type="checkbox"><span>Free build</span><small>Free construction · frozen finances</small></label>
@@ -65,7 +71,7 @@
  <div class="button-row"><button id="editorStart">Edit map</button><button id="editorApply" disabled>Apply</button><button id="editorCancel" disabled>Cancel</button></div>
  </section>
  <section class="transit-planner">
-          <div class="section-title"><h2>Bus line planner</h2><span>V7</span></div>
+          <div class="section-title"><h2>Bus line planner</h2><span>V7.1</span></div>
           <p class="help-text">Build bus stops beside roads. Tap stops in order, then save a loop. Each bus costs $18/day.</p>
           <label class="select-row">Line name<input id="routeName" maxlength="32" placeholder="Downtown Loop"></label>
           <div class="button-row"><button id="newRoute">New line</button><button id="saveRoute" disabled>Save line</button><button id="cancelRoute">Cancel</button><button id="undoStop">Undo stop</button></div>

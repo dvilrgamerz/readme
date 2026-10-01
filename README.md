@@ -1,4 +1,4 @@
-# MetroForge V7
+# MetroForge V7.1
 
 **Build a town. Connect a region. Shape a metropolis.**
 
@@ -12,10 +12,11 @@ If this link shows a 404, enable Pages once: **Settings → Pages → Source: Gi
 
 Choose **City playground → Load full city** to try any of 15 ready-built layouts, or turn on **Free build** for free construction. Use **Showcase** in the Build panel to explore an established city. It starts paused; press Play when you're ready. Showcase replaces the current city, so save or export first.
 
-## What's new in V7
+## What's new in V7.1
 
 | System | What you can do |
 |---|---|
+| Land expansion | Start with A4 and buy neighboring 16×10 plots across a 16-plot region. Plot prices rise with expansion; free build lets you claim plots free. |
 | Free build | Build, demolish and upgrade without construction charges; normal finances are frozen. |
 | 15 full cities | Load garden, river, coastal, industrial, downtown, island, rail, university, eco, tourism, suburban, harbor, boulevard, traffic and balanced layouts. |
 | Passenger rail | Paint tracks through two road-connected stations and watch trains shuttle between them. Nearby home-to-work trips become rail riders. |
@@ -32,13 +33,19 @@ V2–V4 systems remain: taxes, municipal loans, service budgets, parks, educatio
 
 ## First city in five steps
 
-1. Extend the starter highway near the bottom-left corner. Roads must connect to a map edge.
+1. Extend the starter highway inside your owned A4 plot near the bottom-left corner. Roads must connect to a map edge.
 2. Zone residential homes and commercial/industrial jobs immediately beside connected roads.
 3. Build connected wind turbines or a power plant, plus a water tower. Zones need road access, power, and water to develop.
 4. Press Play and balance jobs, income, and services as buildings grow.
-5. Add parks and schools; upgrade busy roads, paint districts, and expand across the river with bridges.
+5. Choose **Expand city → select a bordering plot → Buy plot** to unlock more land. Add parks and schools, upgrade busy roads, and cross the river with bridges.
 
 Avoid spending all your money on services before you have a tax base. Add a garbage depot as waste accumulates. Keep staffed industry connected so trucks can supply shops. Buildings lose development after sustained poor conditions; restore access and utilities to recover.
+
+## Buying more land
+
+New cities begin with **A4**, one 16×10 plot. The region contains **16 plots** arranged in a 4×4 grid. Select **Expand city** and choose a plot on the map or in the plot grid, then press **Buy plot**. A plot must share an edge with land you own. Base prices start at **$5,000**, increase by **$1,500 per previously purchased plot**, and include a small terrain adjustment for water. The panel shows the exact current price before purchase.
+
+Unowned plots stay shaded and reject construction, rail, demolition, district painting and map-editor changes. Purchased land unlocks immediately and remains owned through Save, Export and Import. **Free build** makes land claims free; plots still need to border your city. Showcase, all 15 ready-made designs and older saves retain the complete region. Land is a one-time purchase, separate from daily upkeep.
 
 ## Controls
 
@@ -91,4 +98,4 @@ Node 20+ is required for tests; the browser game needs no npm dependencies or bu
 
 This release uses a 64×40 map and Canvas 2D renderer, up to 180 vehicles, grid-based queues and signals, generic goods, per-property waste, and household groups. Bus ridership is estimated from coverage rather than individual passengers. Metro remains a simplified capacity service. Rail uses orthogonal track corridors with automatic station connections and up to 20 shuttles. Terminals transfer directly to factories/shops within seven tiles; local truck legs and rail signals are not modeled. Tourism and passenger counts are aggregate estimates. Individual pedestrians, realistic train scheduling and a full 3D engine remain future work.
 
-[Changelog](CHANGELOG.md) · [V7 release notes](versions/V7.md) · [V6 release notes](versions/V6.md) · [V5 release notes](versions/V5.md) · [V4 release plan](docs/V4_BUG_FIX_UI_RELEASE_PLAN.md)
+[Changelog](CHANGELOG.md) · [V7.1 release notes](versions/V7.1.md) · [V7 release notes](versions/V7.md) · [V6 release notes](versions/V6.md) · [V5 release notes](versions/V5.md) · [V4 release plan](docs/V4_BUG_FIX_UI_RELEASE_PLAN.md)
