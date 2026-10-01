@@ -15,8 +15,10 @@ export function sanitiseV7(input,grid){
  s.completed=CHALLENGES.filter(c=>Array.isArray(input.completed)&&input.completed.includes(c.id)).map(c=>c.id);
  for(const k of ['resolved','lost','railDelivered'])s[k]=Number.isFinite(input[k])?Math.max(0,Math.min(1e12,input[k])):0;
  const point=p=>Array.isArray(p)&&p.length===2&&p.every(Number.isInteger)&&!!grid[p[1]]?.[p[0]];
+ const ids=new Set();
  for(const i of Array.isArray(input.incidents)?input.incidents.slice(0,8):[]){if(!i||!point(i.target)||!isZone(grid[i.target[1]][i.target[0]].type)||!['fire','medical'].includes(i.kind))continue;
-  s.incidents.push({id:s.nextIncident++,kind:i.kind,target:[...i.target],remaining:Number.isFinite(i.remaining)?Math.max(1,Math.min(120,i.remaining)):90});}
+  const id=Number.isInteger(i.id)&&i.id>0&&i.id<1e8?i.id:s.nextIncident;if(ids.has(id))continue;ids.add(id);s.nextIncident=Math.max(s.nextIncident,id+1);
+  s.incidents.push({id,kind:i.kind,target:[...i.target],remaining:Number.isFinite(i.remaining)?Math.max(1,Math.min(120,i.remaining)):90});}
  return s;
 }
 export function railPath(grid,start,end){

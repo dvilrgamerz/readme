@@ -20,7 +20,7 @@ try{
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')));
  assert.equal(saved.version,7);assert.equal(saved.city.grid.length,40);assert.equal(saved.city.v6.routes.length,2);assert.equal(saved.city.v6.signals[15*64+12],false);
  await page.locator('[data-speed="4"]').click();await page.waitForTimeout(2500);await page.locator('#pauseBtn').click();
- await page.locator('#saveBtn').click();const inFlight=await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.v6.vehicles.length);await page.locator('#loadBtn').click();await page.locator('#saveBtn').click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.v6.vehicles.length),inFlight);
+ await page.locator('#saveBtn').click();const inFlight=await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.v6.vehicles.map(v=>({id:v.id,kind:v.kind}))); await page.locator('#loadBtn').click();await page.locator('#saveBtn').click();assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('metroforge-v7-save')).city.v6.vehicles.map(v=>({id:v.id,kind:v.kind}))),inFlight);
  await page.locator('[data-tool="inspect"]').click();await page.screenshot({path:'qa-artifacts/desktop-v7.png'});
  const frames=await page.evaluate(async()=>{
    const stamps=[];await new Promise(resolve=>{function step(t){stamps.push(t);if(stamps.length===61)resolve();else requestAnimationFrame(step);}requestAnimationFrame(step);});return stamps.slice(1).map((t,i)=>t-stamps[i]);

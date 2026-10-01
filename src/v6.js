@@ -24,12 +24,12 @@ export function sanitiseV6(input,grid){
   }
   const vehicleIds=new Set();
   for(const v of Array.isArray(input.vehicles)?input.vehicles.slice(0,180):[]){
-    if(!v||!['car','bus','cargo','garbage'].includes(v.kind)||!Array.isArray(v.path)||v.path.length<2||v.path.length>w*h||!v.path.every(p=>point(p)&&isRoad(grid[p[1]][p[0]].type)))continue;
+    if(!v||!['car','bus','cargo','garbage','fireEngine','ambulance'].includes(v.kind)||!Array.isArray(v.path)||v.path.length<2||v.path.length>w*h||!v.path.every(p=>point(p)&&isRoad(grid[p[1]][p[0]].type)))continue;
     if(v.path.some((p,i)=>i&&Math.abs(p[0]-v.path[i-1][0])+Math.abs(p[1]-v.path[i-1][1])!==1))continue;
-    if(['cargo','garbage'].includes(v.kind)&&(!point(v.source)||!point(v.target)))continue;
+    if(['cargo','garbage','fireEngine','ambulance'].includes(v.kind)&&(!point(v.source)||!point(v.target)))continue;
     if(v.kind==='bus'&&!out.routes.some(r=>r.id===v.routeId))continue;
     const id=Math.floor(number(v.id,1,1e8,1));if(vehicleIds.has(id))continue;vehicleIds.add(id);
-    out.vehicles.push({id,kind:v.kind,path:v.path.map(p=>[...p]),index:Math.floor(number(v.index,0,v.path.length-2)),t:number(v.t,0,.999),speed:number(v.speed,.5,4,1.8),wait:number(v.wait,0,1e7),dwell:number(v.dwell,0,2),age:number(v.age,0,1e7),payload:number(v.payload,0,100),source:point(v.source)?[...v.source]:null,target:point(v.target)?[...v.target]:null,routeId:v.routeId,leg:Math.floor(number(v.leg,0,15)),color:['#ffd35e','#f7fafc','#68d8df','#ee8ba0'].includes(v.color)?v.color:'#ffd35e'});
+    out.vehicles.push({id,kind:v.kind,path:v.path.map(p=>[...p]),index:Math.floor(number(v.index,0,v.path.length-2)),t:number(v.t,0,.999),speed:number(v.speed,.5,4,1.8),wait:number(v.wait,0,1e7),dwell:number(v.dwell,0,2),age:number(v.age,0,1e7),payload:number(v.payload,0,100),source:point(v.source)?[...v.source]:null,target:point(v.target)?[...v.target]:null,routeId:v.routeId,incidentId:Math.floor(number(v.incidentId,1,1e8,0)),leg:Math.floor(number(v.leg,0,15)),color:['#ffd35e','#f7fafc','#68d8df','#ee8ba0'].includes(v.color)?v.color:'#ffd35e'});
   }
   out.nextVehicleId=Math.max(1,...out.vehicles.map(v=>v.id+1));out.clock=number(input.clock,0,1e9);
   for(const k of ['delivered','collected','sales'])out[k]=number(input[k],0,1e12);

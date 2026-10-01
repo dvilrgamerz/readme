@@ -66,7 +66,7 @@ Avoid spending all your money on services before you have a tax base. Add a garb
 
 ## Save your work
 
-Save and autosave are stored in this browser on this device. Use **Export** for a portable backup, then **Import** on another device. A V7 load checks V7 slots first, then V6, V5 and V4 saves. Rail tracks, free-build mode, incidents and challenge progress persist. Train trips restart on load; reserved cargo is returned to its factory before saving. Emergency crews redispatch to saved incidents. Older files migrate automatically into the larger map; utilities and access are recalculated. Browser privacy settings or clearing site data can remove local saves.
+Save and autosave are stored in this browser on this device. Use **Export** for a portable backup, then **Import** on another device. A V7 load checks V7 slots first, then V6, V5 and V4 saves. Rail tracks, free-build mode, incidents and challenge progress persist. Train trips restart on load; reserved cargo is returned to its factory before saving. Valid emergency trips resume; pending incidents redispatch as needed. Older files migrate automatically into the larger map; utilities and access are recalculated. Browser privacy settings or clearing site data can remove local saves.
 
 ## Run and test locally
 

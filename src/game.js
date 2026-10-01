@@ -747,7 +747,8 @@ function loadRaw(raw){
   const next=parseSave(raw,freshCity(),Object.keys(BUILD),W,H);
   if(next.mission){const template=MISSIONS.find(m=>m.id===next.mission.id);next.mission={...template,...next.mission};}
   const input=JSON.parse(raw);next.v6=sanitiseV6((input.city||input).v6,next.grid);next.v7=sanitiseV7((input.city||input).v7,next.grid);
-  city=next;editorBackup=null;editingRoute=null;transport=null;routeDraft=[];drawingRoute=false;cars=[];rain=[];if(city.weather==="Rain"||city.weather==="Storm")for(let i=0;i<150;i++)rain.push({x:rand(0,canvas.width),y:rand(0,canvas.height),s:rand(5,12)});simAccumulator=0;inspectTile=null;invalidate();simulationStep(false);city.lastPopulation=city.population;syncControls();syncV5Controls();updateUI();
+  next.v6.vehicles=next.v6.vehicles.filter(v=>!['fireEngine','ambulance'].includes(v.kind)||next.v7.incidents.some(i=>i.id===v.incidentId&&i.target[0]===v.target?.[0]&&i.target[1]===v.target?.[1]&&next.grid[v.source[1]][v.source[0]].type===(v.kind==='fireEngine'?'fire':'hospital')));
+  city=next;editorBackup=null;editingRoute=null;transport=null;routeDraft=[];drawingRoute=false;cars=[];rain=[];if(city.weather==="Rain"||city.weather==="Storm")for(let i=0;i<150;i++)rain.push({x:rand(0,canvas.width),y:rand(0,canvas.height),s:rand(5,12)});simAccumulator=0;inspectTile=null;invalidate();simulationStep(false);city.lastPopulation=city.population;makeTools();syncControls();syncV5Controls();updateUI();
 }
 $('saveBtn').onclick=()=>{if(storeCity('metroforge-v7-save'))showToast('City saved.');};
 $('loadBtn').onclick=()=>{
@@ -769,8 +770,8 @@ $("rerollMission").onclick=()=>{
   showToast("New mission assigned.");
 };
 $("newBtn").onclick=()=>{
-  if(confirm("Generate a brand-new MetroForge V6 city? Unsaved progress will be lost.")){
-    city=freshCity();transport=null;routeDraft=[];drawingRoute=false;cars=[];rain=[];inspectTile=null;invalidate();simulationStep();syncControls();syncV5Controls();showToast("New procedural city generated.");
+  if(confirm("Generate a brand-new MetroForge V7 city? Unsaved progress will be lost.")){
+    city=freshCity();editorBackup=null;editingRoute=null;transport=null;routeDraft=[];drawingRoute=false;cars=[];rain=[];inspectTile=null;invalidate();simulationStep();syncControls();syncV5Controls();showToast("New procedural city generated.");
   }
 };
 
@@ -846,7 +847,7 @@ window.addEventListener('keydown',e=>{
 });
 $('demoBtn').onclick=()=>{
   if(!confirm('Start a fresh showcase city? Save or export your current city first.'))return;
-  city=freshCity();transport=null;routeDraft=[];drawingRoute=false;
+  city=freshCity();editorBackup=null;editingRoute=null;transport=null;routeDraft=[];drawingRoute=false;
   const put=(x,y,type,level=0)=>{const t=tileBase(type);t.level=level;city.grid[y][x]=t;};
   for(let x=0;x<27;x++)put(x,27,'avenue');
   for(const y of [9,15,21])for(let x=5;x<27;x++)put(x,y,'road');
@@ -932,7 +933,7 @@ function loadDesign(id){
  const free=city.v7.freeBuild,layout=cityDesign(id,tileBase,W,H);editorBackup=null;city=freshCity();city.grid=layout.grid;city.v7.freeBuild=free;city.v7.design=layout.design.name;
  city.v6.routes=[layout.route];city.v6.nextRouteId=2;city.paused=true;city.funds=100000;city.policies.education=true;
  if(id==='eco'||id==='garden')city.policies.green=true;
- transport=null;routeDraft=[];drawingRoute=false;editingRoute=null;inspectTile=null;cars=[];rain=[];simAccumulator=0;invalidate();simulationStep(false);city.lastPopulation=city.population;syncControls();syncV5Controls();updateUI();camera={zoom:1,x:0,y:0};applyCamera();showToast(layout.design.name+' loaded. Press Play to test or turn on Free build.');
+ transport=null;routeDraft=[];drawingRoute=false;editingRoute=null;inspectTile=null;cars=[];rain=[];simAccumulator=0;invalidate();simulationStep(false);city.lastPopulation=city.population;makeTools();syncControls();syncV5Controls();updateUI();camera={zoom:1,x:0,y:0};applyCamera();showToast(layout.design.name+' loaded. Press Play to test or turn on Free build.');
 }
 function updateV7UI(){
  const s=city.v7;$('freeBuild').checked=s.freeBuild;$('designName').textContent=s.design;
