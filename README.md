@@ -4,9 +4,11 @@
 
 MetroForge is an original, free browser city builder inspired by the road planning, zoning, and municipal management of games such as Cities: Skylines. It is a lightweight **2D simulation**, with no installation, account, paid assets, or API keys required.
 
-## Play now
+## Play online
 
 **[Launch MetroForge →](https://dvilrgamerz.github.io/readme/)**
+
+If this link shows a 404, enable Pages once: **Settings → Pages → Source: GitHub Actions**. Then open **Actions → Test and deploy MetroForge → Run workflow**. Subsequent pushes to `main` test and deploy automatically.
 
 Use **Showcase** in the Build panel to explore an established city. It starts paused; press Play when you're ready. Showcase replaces the current city, so save or export first.
 
@@ -73,7 +75,7 @@ python3 -m http.server 8000
 npm test
 ```
 
-Node 20+ is required for tests; the browser game needs no npm dependencies or build step. GitHub Pages can serve the repository root directly from `main`.
+Node 20+ is required for tests; the browser game needs no npm dependencies or build step. The included GitHub Actions workflow tests and deploys the game files from `main` after Pages is enabled.
 
 ## Scope
 

@@ -1,0 +1,46 @@
+name: Test and deploy MetroForge
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate game
+        run: |
+          node --check src/game.js
+          npm test
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Prepare game files
+        run: |
+          mkdir -p _site/src
+          cp index.html styles.css _site/
+          cp src/*.js _site/src/
+          touch _site/.nojekyll
+      - name: Upload game
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy game
+        id: deployment
+        uses: actions/deploy-pages@v4
