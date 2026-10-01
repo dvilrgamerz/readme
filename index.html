@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07101d">
-  <title>MetroForge V5 — City Builder</title>
-  <meta name="description" content="MetroForge V5 is an original browser city-building simulation.">
+  <title>MetroForge V6 — City Builder</title>
+  <meta name="description" content="MetroForge V6 is an original browser city-building simulation.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body data-mobile-panel="map">
@@ -13,7 +13,7 @@
     <header class="topbar">
       <div class="brand">
         <div class="mark">MF</div>
-        <div><h1>MetroForge <em>V5</em></h1><p>YOUR CITY. YOUR RULES.</p></div>
+        <div><h1>MetroForge <em>V6</em></h1><p>YOUR CITY. YOUR RULES.</p></div>
       </div>
       <div class="stats">
         <div class="stat"><span>Funds</span><strong id="funds">$50,000</strong><small id="cashflow">+$0/day</small></div>
@@ -51,6 +51,14 @@
           </div>
         </section>
 
+        <section class="transit-planner">
+          <div class="section-title"><h2>Bus line planner</h2><span>V6</span></div>
+          <p class="help-text">Build bus stops beside roads. Tap stops in order, then save a loop. Each bus costs $18/day.</p>
+          <label class="select-row">Line name<input id="routeName" maxlength="32" placeholder="Downtown Loop"></label>
+          <div class="button-row"><button id="newRoute">New line</button><button id="saveRoute" disabled>Save line</button><button id="cancelRoute">Cancel</button></div>
+          <p id="routeDraft" class="help-text"></p><label class="toggle"><input id="showRoutes" type="checkbox" checked><span>Show bus lines on map</span></label>
+          <div id="routeList"></div>
+        </section>
         <section>
           <div class="section-title"><h2>District planner</h2></div>
           <label class="select-row">Paint district<select id="districtSelect"><option value="1">Central · cyan</option><option value="2">Northside · amber</option><option value="3">Riverside · violet</option><option value="0">Erase district</option></select></label>
@@ -85,7 +93,7 @@
       <section class="game-shell">
         <canvas id="gameCanvas" width="1280" height="800" aria-label="City map. Select a tool and drag to build; use Pan to move."></canvas>
         <div class="camera-controls"><button id="zoomOut" aria-label="Zoom out">−</button><span id="zoomLabel">100%</span><button id="zoomIn" aria-label="Zoom in">+</button><button id="resetView">Fit map</button></div>
-        <div class="world-label"><b>METROFORGE</b><span>REGIONAL PLANNING · V5</span></div>
+        <div class="world-label"><b>METROFORGE</b><span>CONNECTED CITIES · 64×40</span></div>
         <div id="toast" role="status" class="toast hidden"></div>
         <div id="tooltip" class="tooltip hidden"></div>
         <div id="eventBanner" class="event-banner hidden"></div>
@@ -97,7 +105,10 @@
 
       <aside class="panel right">
         <section><div class="section-title"><h2>Mayor’s desk</h2><span>ADVISER</span></div><div id="adviser" class="adviser"></div></section>
-        <section><div class="section-title"><h2>Property inspector</h2></div><div id="inspector" class="inspector"></div></section>
+        <section><div class="section-title"><h2>Property inspector</h2></div><div id="inspector" class="inspector"></div><div class="inspector-actions"><button id="upgradeBuilding" disabled>Upgrade level ($200–800)</button><button id="changeDensity" disabled>Change density</button></div></section>
+        <section><div class="section-title"><h2>People & logistics</h2></div><div class="mini-grid">
+          <div><span>Households</span><strong id="householdStat">0</strong></div><div><span>Employed / workers</span><strong id="workersStat">0 / 0</strong></div><div><span>Students</span><strong id="studentsStat">0</strong></div><div><span>Queues</span><strong id="queueStat">0</strong></div></div><p id="deliveryStat" class="help-text"></p><p id="garbageStat" class="help-text"></p><p class="help-text">Orange: buses · violet: deliveries · lime: garbage trucks. Red dots: road or utility problems.</p></section>
+        <section><div class="section-title"><h2>Daily budget</h2></div><div id="budgetRows"></div><strong id="budgetTotal" class="budget-total"></strong><p class="help-text">Projected daily totals. Last settled result appears under Funds. Shops without stock pay less tax.</p></section>
         <section><div class="section-title"><h2>Population history</h2><span>40 days</span></div><canvas id="trendCanvas" width="220" height="55" aria-label="Population trend chart"></canvas></section>
         <section>
           <div class="section-title"><h2>Zone demand</h2></div><p class="help-text">Higher demand means more growth potential, not the share of your city.</p>

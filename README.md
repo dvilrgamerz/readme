@@ -1,4 +1,4 @@
-# MetroForge V5
+# MetroForge V6
 
 **Build a town. Connect a region. Shape a metropolis.**
 
@@ -12,20 +12,19 @@ If this link shows a 404, enable Pages once: **Settings → Pages → Source: Gi
 
 Use **Showcase** in the Build panel to explore an established city. It starts paused; press Play when you're ready. Showcase replaces the current city, so save or export first.
 
-## What's new in V5
+## What's new in V6
 
 | System | What you can do |
 |---|---|
-| Traffic | Watch vehicles follow shortest road routes between homes and workplaces. Inspect busy road segments with the traffic overlay. |
-| Regional roads | Connect to any map edge, upgrade roads to avenues, and build bridges across the river. |
-| Neighborhoods | Choose low or high density when zoning. High density provides 2.5× capacity and benefits from education. |
-| Districts | Paint named districts; choose balanced, green, or business policies for each one. |
-| Clean energy | Supply 200 MW per connected wind turbine without power-plant pollution. |
-| Building health | Inspect road and utility access, development level, residents, jobs, pollution, and abandonment pressure. |
-| City planning | Follow the mayor's adviser, zone-demand meters, alerts, and a 40-day population chart. |
-| Controls | Pan, zoom, fit the map, paint continuous lines, and use keyboard shortcuts or touch. |
-| Saves | Save locally, export/import JSON backups, and load existing V4 saves. Invalid saves leave the current city intact. |
-| Performance | Cache the map layer and road/service data; refresh the dashboard four times per second rather than every animation frame. |
+| Traffic queues | Cars, buses and trucks queue behind vehicles, wait at signals, and yield at occupied junctions. |
+| Custom bus lines | Pick stops in order, save a loop, and add up to four buses per line. |
+| Supply chains | Staff factories, move goods by truck, and keep shop inventories stocked. |
+| Garbage | Build garbage depots and watch trucks collect waste before it harms your neighborhoods. |
+| Households | Track families, workers, students, reachable jobs and commute distances per residential property. |
+| Building upgrades | Resolve listed development blockers, upgrade levels, and convert density in the inspector. |
+| Regional map | Plan across 64×40 tiles, with bridges, avenues, wind power and named districts. |
+| Daily budget | See every income and expense category, transit fares, debt payments and the projected net. |
+| Controls & saves | Touch controls, keyboard shortcuts, 500% zoom, JSON backups, and V4/V5 migration. |
 
 V2–V4 systems remain: taxes, municipal loans, service budgets, parks, education, healthcare, safety, recycling, buses, metro capacity, weather, disasters, day/night lighting, missions, and milestones.
 
@@ -37,7 +36,7 @@ V2–V4 systems remain: taxes, municipal loans, service budgets, parks, educatio
 4. Press Play and balance jobs, income, and services as buildings grow.
 5. Add parks and schools; upgrade busy roads, paint districts, and expand across the river with bridges.
 
-Avoid spending all your money on services before you have a tax base. Buildings lose development after sustained poor conditions; restore access and utilities to recover.
+Avoid spending all your money on services before you have a tax base. Add a garbage depot as waste accumulates. Keep staffed industry connected so trucks can supply shops. Buildings lose development after sustained poor conditions; restore access and utilities to recover.
 
 ## Controls
 
@@ -57,7 +56,7 @@ Avoid spending all your money on services before you have a tax base. Buildings 
 - **Demand percentages** show how attractive new zoning is; they are not your city's land-use proportions.
 - **Tax percentages** set the tax rate for each zone. High taxes discourage growth.
 - **Service budget** scales service expenses and service effectiveness; roads and zoning upkeep are unaffected.
-- **Traffic percentage** is an aggregate road-capacity estimate; higher is better. The traffic overlay shows the activity of visible vehicles per road segment.
+- **Traffic percentage** measures the share of simulated vehicles moving freely; higher is better. The traffic overlay shows the activity of visible vehicles per road segment.
 - **Utilities** show current use / connected supply. Towers and generators need connected roads; distribution is city-wide rather than simulated pipes or cables.
 - **Green Initiative** costs $60/day and reduces pollution. **Free Transit** costs $90/day and increases transit capacity. **Education Boost** costs $80/day and improves education.
 - **District green policy** reduces local pollution and raises land value. **Business policy** improves job-zone development while increasing local pollution.
@@ -65,7 +64,7 @@ Avoid spending all your money on services before you have a tax base. Buildings 
 
 ## Save your work
 
-Save and autosave are stored in this browser on this device. Use **Export** for a portable backup, then **Import** on another device. A V5 load checks V5 slots first, then V4 saves. V4 files migrate automatically; utilities and access are recalculated. Browser privacy settings or clearing site data can remove local saves.
+Save and autosave are stored in this browser on this device. Use **Export** for a portable backup, then **Import** on another device. A V6 load checks V6 slots first, then V5 and V4 saves. Older files migrate automatically into the larger map; utilities and access are recalculated. Browser privacy settings or clearing site data can remove local saves.
 
 ## Run and test locally
 
@@ -77,8 +76,17 @@ npm test
 
 Node 20+ is required for tests; the browser game needs no npm dependencies or build step. The included GitHub Actions workflow tests and deploys the game files from `main` after Pages is enabled.
 
+## Traffic, transit and logistics
+
+- Use **Traffic Lights** to toggle signals at junctions. Upgrade busy roads to avenues and create alternate routes when trucks queue.
+- Build bus stops beside connected roads. Choose **New line**, tap stops in order, then **Save line**. A route needs stops near both homes and workplaces to attract riders. Each bus costs **$18/day**.
+- Staffed, powered factories produce goods each day. Violet delivery trucks bring goods to shops; empty shops pay less tax.
+- A **Garbage Depot** costs **$1,250**, with **$55/day** upkeep and up to three active trucks. Lime trucks collect accumulated waste. Waste hurts health and development when neglected.
+- Inspect a home to see household groups, students, employment, commute distance and development blockers. Upgrade levels for **$200–800**, or convert density for **$350** (high) / **$150** (low).
+- The budget panel shows projected daily totals; the number under Funds shows the last settled day's result.
+
 ## Scope
 
-This release retains the 48×30 map and Canvas 2D renderer. Vehicles use home-to-job road routes, with an aggregate congestion model. Transit contributes connected capacity; it does not have editable bus routes. Individual households, detailed supply chains, rail, terraforming, and a full 3D engine are future work.
+This release uses a 64×40 map and Canvas 2D renderer, up to 180 vehicles, grid-based queues and signals, generic goods, per-property waste, and household groups. Bus ridership is estimated from coverage rather than individual passengers. Metro remains a simplified capacity service. Detailed rail, individual pedestrian agents, terrain editing, and a full 3D engine are future work.
 
-[Changelog](CHANGELOG.md) · [V5 release notes](versions/V5.md) · [V4 release plan](docs/V4_BUG_FIX_UI_RELEASE_PLAN.md)
+[Changelog](CHANGELOG.md) · [V6 release notes](versions/V6.md) · [V5 release notes](versions/V5.md) · [V4 release plan](docs/V4_BUG_FIX_UI_RELEASE_PLAN.md)

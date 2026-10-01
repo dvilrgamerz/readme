@@ -81,3 +81,6 @@ button{border-radius:6px;background:#20363f;transition:background .15s,border-co
  body[data-mobile-panel="build"] .left{display:block}body[data-mobile-panel="city"] .right{display:block}.right .mini-grid{grid-template-columns:repeat(3,1fr)}.world-label{top:16px;left:12px}.world-label span{display:none}.camera-controls{top:10px;right:8px}.map-hud{left:8px;right:8px;bottom:12px}.map-hud span{font-size:9px;max-width:78%}.event-banner{max-width:90%}.tooltip{display:none!important}footer{display:none}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* V6 planning and logistics */
+.route-item{display:flex;flex-wrap:wrap;gap:5px;padding:9px 0;border-bottom:1px solid var(--line)}.route-item span{flex-basis:100%;font-size:10px;line-height:1.5;color:#cfdfdc}.route-item button{font-size:10px;padding:5px 8px}.budget-row{display:flex;justify-content:space-between;gap:8px;font-size:10px;padding:6px 0;border-bottom:1px solid #29414a}.budget-row strong{font-variant-numeric:tabular-nums}.budget-total{display:block;color:var(--accent);font-size:12px;margin-top:10px}.inspector-actions{display:flex;flex-direction:column;gap:6px;margin-top:8px}.inspector-actions button{font-size:10px;min-height:34px}button:disabled{opacity:.45;cursor:not-allowed}.transit-planner{border-left:2px solid #f9aa65;padding-left:10px}#routeList:empty{display:none}

@@ -59,13 +59,17 @@ export function coverageFields(grid, specs) {
 }
 export function parseSave(raw, defaults, allowedTypes, w, h) {
   const input=JSON.parse(raw), data=input?.city||input;
-  if(!data||!Array.isArray(data.grid)||data.grid.length!==h||data.grid.some(row=>!Array.isArray(row)||row.length!==w)) throw Error('Wrong map dimensions');
+  if(!data||!Array.isArray(data.grid))throw Error('Wrong map dimensions');
+  const legacy=w===64&&h===40&&data.grid.length===30&&data.grid.every(row=>Array.isArray(row)&&row.length===48);
+  if(!legacy&&(data.grid.length!==h||data.grid.some(row=>!Array.isArray(row)||row.length!==w)))throw Error('Wrong map dimensions');
   const finite=(v,min,max,fallback)=>Number.isFinite(v)?Math.max(min,Math.min(max,v)):fallback;
   const out=structuredClone(defaults);
-  out.grid=data.grid.map(row=>row.map(c=>{
+  const migrated=legacy?Array.from({length:h},(_,y)=>Array.from({length:w},(_,x)=>data.grid[y]?.[x]||{...defaults.grid[y][x],type:defaults.grid[y][x].type==='road'?'empty':defaults.grid[y][x].type})):data.grid;
+  out.grid=migrated.map(row=>row.map(c=>{
     if(!c||!allowedTypes.includes(c.type)) throw Error('Unknown tile');
     const t={...defaults.grid[0][0],type:c.type};
     for(const k of ['level','district','density','age','distress']) t[k]=Math.floor(finite(c[k],0,k==='age'?1e7:k==='distress'?100:k==='district'?3:k==='level'?4:1,0));
+    for(const k of ['trash','stock','goods'])t[k]=finite(c[k],0,k==='goods'?1000:k==='stock'?120:100,k==='stock'&&c.type==='commercial'?25:0);
     t.terrain=c.type==='water'||c.type==='bridge'||c.terrain==='water'?'water':'empty';
     return t;
   }));

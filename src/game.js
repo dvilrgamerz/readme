@@ -1,7 +1,8 @@
+import {newV6, sanitiseV6, TrafficEngine, budgetBreakdown, developmentBlockers, tileId} from "./v6.js";
 import {isRoad, isZone, roadNetwork, shortestRoadPath, coverageFields, parseSave} from "./systems.js";
 const canvas = document.querySelector("#gameCanvas");
 let ctx = canvas.getContext("2d");
-const W = 48, H = 30, TILE = 25;
+const W = 64, H = 40, TILE = 25;
 canvas.width = W * TILE;
 canvas.height = H * TILE;
 
@@ -31,6 +32,7 @@ const BUILD = {
   bus:{name:"Bus Stop",cost:400,upkeep:12,color:"#55e0c0"},
   metro:{name:"Metro Station",cost:2800,upkeep:120,color:"#ff9e55"},
   recycle:{name:"Recycling Center",cost:1400,upkeep:60,color:"#92d45d"},
+  garbage:{name:"Garbage Depot",cost:1250,upkeep:55,color:"#bcc892"},
   district:{name:"District Paint",cost:0,color:"#3d744f"}
 };
 
@@ -38,7 +40,7 @@ const TOOLS = [
   ["inspect","⌕"],["pan","✥"],["road","🛣️"],["avenue","🛤️"],["bridge","🌉"],["wind","🌬️"],["residential","🏠"],["commercial","🏪"],
   ["industrial","🏭"],["park","🌳"],["power","⚡"],["waterTower","💧"],
   ["fire","🚒"],["police","🚓"],["school","🏫"],["hospital","🏥"],
-  ["bus","🚌"],["metro","🚇"],["recycle","♻️"],["district","◫"],["bulldoze","🧨"]
+  ["bus","🚌"],["metro","🚇"],["recycle","♻️"],["garbage","🚛"],["route","🚌"],["signal","🚦"],["district","◫"],["bulldoze","🧨"]
 ];
 
 const MILESTONES = [
@@ -64,6 +66,7 @@ let lastPaint = "";
 let simAccumulator = 0;
 let lastFrame = performance.now();
 let cars = [];
+let transport=null,routeDraft=[],drawingRoute=false;
 let rain = [];
 let roadTiles=[], tripOrigins=[], tripDestinations=[], trafficLoads=new Map();
 let spawnAccumulator=0, trafficPaintAccumulator=0;
@@ -85,7 +88,7 @@ function districtPolicy(c){return c.district?city.districtPolicies[c.district-1]
 
 function tileBase(type="empty"){
   return {
-    type, terrain:type==="water"?"water":"empty", density:0, distress:0, level:0, residents:0, jobs:0, age:0,
+    type, terrain:type==="water"?"water":"empty", density:0, distress:0, trash:0, stock:type==="commercial"?25:0, goods:0, level:0, residents:0, jobs:0, age:0,
     powered:false, watered:false, land:50, pollution:0,
     education:0, crime:0, health:50, district:0, connected:false
   };
@@ -132,7 +135,7 @@ function freshCity(){
     power:{cap:0,use:0}, water:{cap:0,use:0},
     cashflow:0, milestones:[], achievements:[], weather:"Clear", temperature:72,
     mission:null, eventLog:[], districtNames:["Central","Northside","Riverside"],
-    districtPolicies:["balanced","balanced","balanced"], history:[], autosaveDay:0
+    v6:newV6(), districtPolicies:["balanced","balanced","balanced"], history:[], autosaveDay:0
   };
   c.mission = newMission(c);
   return c;
@@ -178,16 +181,16 @@ function count(type){
 function setTool(tool){
   selected = tool;
   document.querySelectorAll(".tool").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));
-  const meta = tool==="bulldoze" ? {name:"Bulldoze"} : BUILD[tool] || {name:tool==="inspect"?"Inspect":"Pan"};
+  const meta = tool==="bulldoze" ? {name:"Bulldoze"} : BUILD[tool] || {name:tool==="inspect"?"Inspect":tool==="route"?"Bus route":tool==="signal"?"Traffic lights":"Pan"};
   $("selectedName").textContent = meta?.name || tool;
-  $("modeHint").textContent = tool==="inspect"?"Select a building to inspect" : tool==="pan"?"Drag the map to move" : tool==="district" ? "Paint districts by clicking land" : tool==="bulldoze" ? "Remove buildings and roads" : "Drag to build "+(meta?.name||tool);
+  $("modeHint").textContent = tool==="route"?"Tap connected bus stops in order, then Save line" : tool==="signal"?"Tap a junction to toggle its lights" : tool==="inspect"?"Select a building to inspect" : tool==="pan"?"Drag the map to move" : tool==="district" ? "Paint districts by clicking land" : tool==="bulldoze" ? "Remove buildings and roads" : "Drag to build "+(meta?.name||tool);
 }
 
 function makeTools(){
   const g = $("toolGrid");
   g.innerHTML="";
   for(const [key,icon] of TOOLS){
-    const meta = key==="bulldoze" ? {name:"Bulldoze",cost:5} : BUILD[key] || {name:key==="inspect"?"Inspect":"Pan",cost:0};
+    const meta = key==="bulldoze" ? {name:"Bulldoze",cost:5} : BUILD[key] || {name:key==="inspect"?"Inspect":key==="route"?"Bus route":key==="signal"?"Traffic lights":"Pan",cost:0};
     const b = document.createElement("button");
     b.className="tool";
     b.dataset.tool=key;
@@ -208,6 +211,19 @@ function build(x,y,tool=selected){
   const cell=city.grid[y]?.[x];if(!cell) return;
   if(tool==='inspect'){inspectTile={x,y};updateInspector();mapDirty=true;return;}
   if(tool==='pan') return;
+  if(tool==='route'){
+    if(cell.type!=='bus'||!cell.connected)return showToast('Choose connected bus stops. Build at least two first.');
+    if(!drawingRoute){routeDraft=[];drawingRoute=true;}
+    if(routeDraft.some(p=>p[0]===x&&p[1]===y))return;
+    if(routeDraft.length>=16)return showToast('Maximum 16 stops per line.');
+    routeDraft.push([x,y]);updateRouteUI();mapDirty=true;return;
+  }
+  if(tool==='signal'){
+    const id=tileId(x,y,W);
+    if(!transport?.intersections.has(id))return showToast('Lights can be toggled at junctions with 3 or 4 road connections.');
+    city.v6.signals[id]=city.v6.signals[id]===false;mapDirty=true;
+    return showToast(city.v6.signals[id]?'Traffic lights enabled.':'Traffic lights disabled.');
+  }
   const sig=x+':'+y+':'+tool;if(sig===lastPaint)return;lastPaint=sig;
   if(tool==='district'){
     if(cell.type==='water')return;cell.district=districtBrush;mapDirty=true;return;
@@ -221,7 +237,7 @@ function build(x,y,tool=selected){
   if(tool==='bridge'&&cell.type!=='water')return showToast('Bridges are built over river tiles.');
   if(cell.type!=='empty'&&!(tool==='bridge'&&cell.type==='water')&&!upgrade)return;
   const meta=BUILD[tool];if(!meta)return;
-  const cost=upgrade?Math.max(0,meta.cost-BUILD[cell.type].cost):meta.cost;
+  const cost=upgrade?Math.max(0,meta.cost-BUILD[cell.type].cost):meta.cost*(isZone(tool)&&density?2:1);
   if(city.funds<cost)return showToast('Not enough money.');
   city.funds-=cost;
   const next=tileBase(tool);next.district=cell.district;next.density=isZone(tool)?density:0;next.terrain=cell.terrain;
@@ -271,7 +287,7 @@ function applyCamera(){
   canvas.style.transform=`translate(${camera.x}px,${camera.y}px) scale(${camera.zoom})`;
   $('zoomLabel').textContent=Math.round(camera.zoom*100)+'%';
 }
-canvas.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=clamp(camera.zoom*(e.deltaY<0?1.12:1/1.12),1,3);applyCamera();},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault();camera.zoom=clamp(camera.zoom*(e.deltaY<0?1.12:1/1.12),1,5);applyCamera();},{passive:false});
 new ResizeObserver(applyCamera).observe(canvas.parentElement);
 
 function updateRoadConnectivity(){
@@ -285,6 +301,8 @@ function updateRoadConnectivity(){
     if(['commercial','industrial'].includes(c.type))tripDestinations.push({road:access,x,y});
   }
   fields=coverageFields(city.grid,SERVICE_SPECS);networkDirty=false;
+  if(!transport||transport.city!==city)transport=new TrafficEngine(city);else transport.rebuild();
+  transport.householdPass();
 }
 
 function utilityPass(){
@@ -332,12 +350,13 @@ function environmentPass(){
     if(serviceNear(x,y,"school",6)) edu+=38*budgetMul;
     if(city.policies.education) edu+=18;
     if(serviceNear(x,y,"hospital",7)) health+=26*budgetMul;
-    health-=pollution*.42;
+    pollution+=(c.trash||0)*.15;
+    health-=pollution*.42+(c.trash||0)*.12;
     if(serviceNear(x,y,"police",7)) crime-=12*budgetMul;
     crime+=Math.max(0,c.level-1)*4;
     if(c.type==="industrial") land-=14;
     if(c.connected) land+=7;
-    land-=pollution*.5;
+    land-=pollution*.5+(c.trash||0)*.12;
     land+=serviceNear(x,y,"park",5)?8:0;
     land+=serviceNear(x,y,"hospital",7)?4:0;
     land+=serviceNear(x,y,"police",7)?3:0;
@@ -383,6 +402,8 @@ function simulateZones(develop=true){
 
     if(districtPolicy(c)==='business'&&c.type!=='residential')quality+=10;
     if(c.density&&c.education<45)quality-=12;
+    quality-=(c.trash||0)*.18;
+    if(c.type==="commercial"&&c.stock<5)quality-=12;
     if(develop)c.distress=quality<24?Math.min(100,c.distress+1):Math.max(0,c.distress-2);
     const grow=clamp((quality-25)/110,0,.55);
     if(develop&&c.connected&&c.powered&&c.watered&&Math.random()<grow*.22 && c.level<4) c.level++;
@@ -401,19 +422,16 @@ function simulateZones(develop=true){
 
   city.population=pop;
   city.jobs=jobs;
-  city.employed=Math.min(pop,jobs);
-  const unemployment=pop?Math.max(0,(pop-city.employed)/pop):0;
-  let transitStops=0;for(const row of city.grid)for(const c of row)if(c.connected)transitStops+=c.type==="bus"?1:c.type==="metro"?4:0;
-  city.transitRiders=Math.round(Math.min(pop*.55,transitStops*(city.policies.freeTransit?75:50)));
-  const roadCapacity=roads*18+avenues*42+city.transitRiders*.4;
-  const pressure=(pop+jobs)/(Math.max(1,roadCapacity));
-  city.traffic=Math.round(clamp(100-pressure*30+(city.policies.freeTransit?10:0),28,100));
+  if(transport)transport.householdPass();
+  city.employed=city.v6.employed;
+  const unemployment=city.v6.workers?Math.max(0,(city.v6.workers-city.employed)/city.v6.workers):0;
+  city.traffic=Math.round(city.v6.traffic);
 
   const utilityPenalty=(city.power.use>city.power.cap?16:0)+(city.water.use>city.water.cap?16:0);
   city.happiness=Math.round(clamp(
     62 + city.landValue*.12 + city.health*.1 + city.education*.06 - city.crime*.18 -
     unemployment*30 - (100-city.traffic)*.17 - city.pollutionAvg*.12 - utilityPenalty -
-    Math.max(0,city.taxes.res-11)*2.1,5,100
+    Math.max(0,city.taxes.res-11)*2.1 - city.v6.unservedTrash*.2,5,100
   ));
 
   const jobGap=jobs-pop;
@@ -423,29 +441,9 @@ function simulateZones(develop=true){
 }
 
 function economyDay(){
-  let upkeep=0;
-  for(const row of city.grid) for(const c of row) upkeep+=(BUILD[c.type]?.upkeep||0)*(isZone(c.type)||isRoad(c.type)?1:city.serviceBudget/100);
-
-
-  const resIncome=city.population*(city.taxes.res/100)*1.6;
-  let comJobs=0,indJobs=0;
-  for(const row of city.grid) for(const c of row){
-    if(c.type==="commercial") comJobs+=c.jobs;
-    if(c.type==="industrial") indJobs+=c.jobs;
-  }
-  const taxIncome=resIncome+comJobs*(city.taxes.com/100)*3.5+indJobs*(city.taxes.ind/100)*3;
-  let policyCost=0;
-  if(city.policies.green) policyCost+=60;
-  if(city.policies.freeTransit) policyCost+=90;
-  if(city.policies.education) policyCost+=80;
-
-  let debtPayment=0;
-  if(city.debt>0){
-    debtPayment=Math.min(city.debt,100);
-    city.debt-=debtPayment;
-  }
-
-  city.cashflow=Math.round(taxIncome-upkeep-policyCost-debtPayment);
+  transport.daily();
+  const b=budgetBreakdown(city,BUILD,city.v6.routes.reduce((s,r)=>s+r.buses,0));
+  city.v6.budget=b;city.debt=Math.max(0,city.debt-b.debt);city.cashflow=b.net;
   city.funds+=city.cashflow;
   city.history.push({population:city.population,cashflow:city.cashflow});if(city.history.length>40)city.history.shift();
   if(city.funds<-10000) city.funds=-10000;
@@ -459,7 +457,7 @@ function economyDay(){
   checkMilestones();
 
   if((city.day-city.autosaveDay+360)%5===0){
-    if(storeCity("metroforge-v5-autosave")){city.autosaveDay=city.day;$("autosaveText").textContent="Autosaved Y"+city.year+" D"+city.day;}
+    if(storeCity("metroforge-v6-autosave")){city.autosaveDay=city.day;$("autosaveText").textContent="Autosaved Y"+city.year+" D"+city.day;}
   }
 }
 
@@ -546,26 +544,11 @@ function simulationStep(develop=true){
 }
 
 function updateCars(){
-  const target=Math.min(90,Math.floor((city.population+city.jobs)/35));
-  spawnAccumulator+=animationDt;
-  if(spawnAccumulator>.15&&cars.length<target&&tripOrigins.length&&tripDestinations.length){
-    spawnAccumulator=0;
-    // Limit path searches per frame; vehicles have actual home-to-job destinations.
-    const home=tripOrigins[rint(0,tripOrigins.length-1)],job=tripDestinations[rint(0,tripDestinations.length-1)];
-    if(city.grid[home.y][home.x].level&&city.grid[job.y][job.x].level){
-      const path=shortestRoadPath(city.grid,home.road,job.road);
-      if(path.length>1)cars.push({path,index:0,t:0,s:rand(1.3,2.3),color:['#ffd35e','#f7fafc','#68d8df','#ee8ba0'][rint(0,3)]});
-    }
-  }
-  while(cars.length>target)cars.pop();
-  trafficLoads.clear();
-  for(const car of cars){
-    const p=car.path[car.index],c=city.grid[p[1]][p[0]];
-    car.t+=animationDt*city.speed*car.s*(c.type==='avenue'?1.4:1)*Math.max(.35,city.traffic/100);
-    if(car.t>=1){car.t-=1;car.index++;if(car.index>=car.path.length-1){car.path.reverse();car.index=0;}}
-    const key=p[1]*W+p[0];trafficLoads.set(key,(trafficLoads.get(key)||0)+1);
-  }
-  trafficPaintAccumulator+=animationDt;if(overlay==='traffic'&&trafficPaintAccumulator>.2){mapDirty=true;trafficPaintAccumulator=0;}
+  if(!transport)return;
+  transport.update(animationDt*city.speed);
+  cars=city.v6.vehicles;trafficLoads.clear();
+  for(const car of cars){const p=car.path[car.index];trafficLoads.set(p[1]*W+p[0],(trafficLoads.get(p[1]*W+p[0])||0)+1);}
+  trafficPaintAccumulator+=animationDt;if(trafficPaintAccumulator>.2){if(overlay==='traffic')mapDirty=true;trafficPaintAccumulator=0;}
 }
 
 function zoneColor(type){
@@ -596,7 +579,7 @@ function drawBaseCell(c,x,y){
     for(const [a,b]of links){ctx.moveTo(px+TILE/2,py+TILE/2);ctx.lineTo(px+TILE/2+(a-x)*TILE/2,py+TILE/2+(b-y)*TILE/2);}
     ctx.stroke();ctx.setLineDash([]);
     if(c.type==='bridge'){ctx.fillStyle='#c8d8de';ctx.fillRect(px,py+1,TILE,2);ctx.fillRect(px,py+TILE-3,TILE,2);}
-    if(links.length>=3){ctx.fillStyle='#a9c9c5';ctx.fillRect(px+3,py+3,3,3);}return;
+    if(links.length>=3){ctx.fillStyle=city.v6.signals[tileId(x,y,W)]===false?'#6e797c':'#f7c56d';ctx.fillRect(px+3,py+3,3,3);}return;
   }
   if(isZone(c.type)){
     if(!c.level){ctx.fillStyle='rgba(255,255,255,.17)';ctx.fillRect(px+4,py+4,TILE-8,TILE-8);}
@@ -613,7 +596,7 @@ function drawBaseCell(c,x,y){
   if(c.type==='park'){
     for(const [dx,dy]of [[8,8],[17,15],[7,19]]){ctx.fillStyle='#253f35';ctx.fillRect(px+dx,py+dy,2,4);ctx.fillStyle='#a0ce7a';ctx.beginPath();ctx.arc(px+dx,py+dy-2,4,0,Math.PI*2);ctx.fill();}return;
   }
-  const icon={wind:'✥',power:'⚡',waterTower:'💧',fire:'F',police:'P',school:'S',hospital:'+',bus:'B',metro:'M',recycle:'R'}[c.type];
+  const icon={garbage:'G',wind:'✥',power:'⚡',waterTower:'💧',fire:'F',police:'P',school:'S',hospital:'+',bus:'B',metro:'M',recycle:'R'}[c.type];
   if(icon){ctx.fillStyle='#e4ebe9';ctx.fillRect(px+4,py+5,TILE-8,TILE-9);ctx.fillStyle='#254b5b';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillText(icon,px+TILE/2,py+17);}
 }
 
@@ -623,7 +606,8 @@ function drawCars(){
     const a=car.path[car.index],b=car.path[car.index+1];if(!b)continue;
     const x=(a[0]+(b[0]-a[0])*car.t)*TILE+TILE/2+(b[1]-a[1])*3;
     const y=(a[1]+(b[1]-a[1])*car.t)*TILE+TILE/2-(b[0]-a[0])*3;
-    ctx.fillStyle=car.color;ctx.fillRect(x-2,y-2,b[0]===a[0]?3:6,b[0]===a[0]?6:3);
+    ctx.fillStyle=car.kind==='bus'?'#fa995d':car.kind==='cargo'?'#b6a4eb':car.kind==='garbage'?'#c5df7f':car.color;
+    const len=car.kind==='car'?6:9;ctx.fillRect(x-2,y-2,b[0]===a[0]?4:len,b[0]===a[0]?len:4);
   }
 }
 
@@ -655,12 +639,12 @@ function draw(){
     ctx=main;mapDirty=false;
   }
   ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(mapLayer,0,0);
-  drawCars();drawWeatherAndNight();
+  drawTransitLines();drawCars();drawWeatherAndNight();
   if(inspectTile){ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(inspectTile.x*TILE+1,inspectTile.y*TILE+1,TILE-2,TILE-2);ctx.lineWidth=1;}
 }
 
 function updateUI(){
-  updateInspector();updateAdviser();drawTrends();
+  updateInspector();updateAdviser();drawTrends();updateV6UI();
   $("funds").textContent=money(city.funds);
   $("cashflow").textContent=(city.cashflow>=0?"+":"")+money(city.cashflow)+"/day";
   $("population").textContent=city.population.toLocaleString();
@@ -692,6 +676,8 @@ function updateUI(){
   if(city.power.use>city.power.cap) alerts.push(["bad","⚡ Not enough electricity."]);
   if(city.water.use>city.water.cap) alerts.push(["bad","💧 Not enough water."]);
   if(city.population>0 && city.jobs<city.population*.55) alerts.push(["warn","💼 The city needs more jobs."]);
+  if(city.v6.unservedTrash)alerts.push(["warn","🚛 Garbage piling up at "+city.v6.unservedTrash+" properties."]);
+  if(city.v6.unstockedShops)alerts.push(["warn","📦 "+city.v6.unstockedShops+" shops need goods deliveries."]);
   if(city.traffic<65) alerts.push(["warn","🚗 Congestion is hurting the economy."]);
   if(city.pollutionAvg>45) alerts.push(["warn","🌫 Pollution is becoming severe."]);
   if(city.crime>35) alerts.push(["warn","🚓 Crime is rising."]);
@@ -776,19 +762,20 @@ function syncControls(){
 }
 
 function storeCity(key){
-  try{localStorage.setItem(key,JSON.stringify({version:5,city}));return true;}
+  try{localStorage.setItem(key,JSON.stringify(saveSnapshot()));return true;}
   catch{$('autosaveText').textContent='Save unavailable — export a backup';showToast('Browser storage unavailable. Use Export.');return false;}
 }
 function loadRaw(raw){
   const next=parseSave(raw,freshCity(),Object.keys(BUILD),W,H);
   if(next.mission){const template=MISSIONS.find(m=>m.id===next.mission.id);next.mission={...template,...next.mission};}
-  city=next;cars=[];rain=[];if(city.weather==="Rain"||city.weather==="Storm")for(let i=0;i<150;i++)rain.push({x:rand(0,canvas.width),y:rand(0,canvas.height),s:rand(5,12)});simAccumulator=0;inspectTile=null;invalidate();simulationStep(false);syncControls();syncV5Controls();updateUI();
+  const input=JSON.parse(raw);next.v6=sanitiseV6((input.city||input).v6,next.grid);
+  city=next;transport=null;routeDraft=[];drawingRoute=false;cars=[];rain=[];if(city.weather==="Rain"||city.weather==="Storm")for(let i=0;i<150;i++)rain.push({x:rand(0,canvas.width),y:rand(0,canvas.height),s:rand(5,12)});simAccumulator=0;inspectTile=null;invalidate();simulationStep(false);syncControls();syncV5Controls();updateUI();
 }
-$('saveBtn').onclick=()=>{if(storeCity('metroforge-v5-save'))showToast('City saved.');};
+$('saveBtn').onclick=()=>{if(storeCity('metroforge-v6-save'))showToast('City saved.');};
 $('loadBtn').onclick=()=>{
   try{
-    const raw=localStorage.getItem('metroforge-v5-save')||localStorage.getItem('metroforge-v5-autosave')||localStorage.getItem('metroforge-v4-save')||localStorage.getItem('metroforge-v4-autosave');
-    if(!raw)return showToast('No saved city found.');loadRaw(raw);showToast('City loaded. V4 saves migrate to V5.');
+    const raw=localStorage.getItem('metroforge-v6-save')||localStorage.getItem('metroforge-v6-autosave')||localStorage.getItem('metroforge-v5-save')||localStorage.getItem('metroforge-v5-autosave')||localStorage.getItem('metroforge-v4-save')||localStorage.getItem('metroforge-v4-autosave');
+    if(!raw)return showToast('No saved city found.');loadRaw(raw);showToast('City loaded. V4/V5 saves expand into V6.');
   }catch{showToast('Invalid save. Your current city was kept.');}
 };
 $("loanBtn").onclick=()=>{
@@ -804,13 +791,13 @@ $("rerollMission").onclick=()=>{
   showToast("New mission assigned.");
 };
 $("newBtn").onclick=()=>{
-  if(confirm("Generate a brand-new MetroForge V5 city? Unsaved progress will be lost.")){
-    city=freshCity();cars=[];rain=[];inspectTile=null;invalidate();simulationStep();syncControls();syncV5Controls();showToast("New procedural city generated.");
+  if(confirm("Generate a brand-new MetroForge V6 city? Unsaved progress will be lost.")){
+    city=freshCity();transport=null;routeDraft=[];drawingRoute=false;cars=[];rain=[];inspectTile=null;invalidate();simulationStep();syncControls();syncV5Controls();showToast("New procedural city generated.");
   }
 };
 
-window.addEventListener('beforeunload',()=>storeCity('metroforge-v5-autosave'));
-document.addEventListener('visibilitychange',()=>{lastFrame=performance.now();if(document.hidden)storeCity('metroforge-v5-autosave');});
+window.addEventListener('beforeunload',()=>storeCity('metroforge-v6-autosave'));
+document.addEventListener('visibilitychange',()=>{lastFrame=performance.now();if(document.hidden)storeCity('metroforge-v6-autosave');});
 
 function syncV5Controls(){
   Array.from($('districtSelect').options).slice(0,3).forEach((o,i)=>o.textContent=city.districtNames[i]+' · '+['cyan','amber','violet'][i]);
@@ -821,9 +808,15 @@ function syncV5Controls(){
   document.querySelectorAll('.speed').forEach(b=>b.classList.toggle('active',!city.paused&&Number(b.dataset.speed)===city.speed));
 }
 function updateInspector(){
-  const box=$('inspector');if(!inspectTile){box.textContent='Choose Inspect, then select any property. Red dots mark road or utility problems.';return;}
+  const box=$('inspector');if(!inspectTile){$('upgradeBuilding').disabled=true;$('changeDensity').disabled=true;box.textContent='Choose Inspect, then select any property. Red dots mark road or utility problems.';return;}
   const {x,y}=inspectTile,c=city.grid[y][x];
   const lines=[BUILD[c.type].name+' • '+x+', '+y];
+  const tax=c.type==='residential'?city.taxes.res:c.type==='commercial'?city.taxes.com:city.taxes.ind;
+  if(isZone(c.type)){lines.push('Waste '+Math.round(c.trash||0)+'/100');if(c.type==='commercial')lines.push('Shop stock '+Math.round(c.stock||0)+'/120');if(c.type==='industrial')lines.push('Factory goods '+Math.round(c.goods||0)+'/1000');const h=city.v6.households.find(h=>h.home[0]===x&&h.home[1]===y);if(h)lines.push(h.families+' households • '+h.students+' students',h.employed+'/'+h.workers+' workers employed • '+h.commute+' road tiles to work');
+    lines.push(...developmentBlockers(c,tax).map(b=>'⚠ '+b));}
+  $('upgradeBuilding').disabled=!isZone(c.type)||c.level>=4||developmentBlockers(c,tax).length>0;
+  $('changeDensity').disabled=!isZone(c.type);
+  $('changeDensity').textContent=c.density?'Convert to low density ($150)':'Convert to high density ($350)';
   if(isZone(c.type))lines.push((c.density?'High':'Low')+' density • Level '+c.level+'/4',c.residents+' residents • '+c.jobs+' jobs',c.distress>=8?'Abandoned — restore utilities and road access':'Development pressure: '+c.distress+'/8',c.powered?'Power connected':'Needs electricity',c.watered?'Water connected':'Needs water');
   if(!['water','empty'].includes(c.type))lines.push(c.connected?'Connected to highway':'No highway access');
   lines.push('Land value '+Math.round(c.land)+' • Pollution '+Math.round(c.pollution)+'%',c.district?'District: '+city.districtNames[c.district-1]:'Outside a district');
@@ -835,7 +828,9 @@ function updateAdviser(){
   else if(!city.power.cap)advice='Build a power plant or wind turbine next to a connected road.';
   else if(!city.water.cap)advice='Add a water tower next to a connected road so homes can grow.';
   else if(city.jobs<city.population*.6)advice='Your city needs jobs. Zone shops and industry along connected roads.';
-  else if(city.traffic<65)advice='Upgrade busy roads to avenues. Add connected bus stops or metro stations.';
+  else if(city.v6.unservedTrash)advice='Build a connected garbage depot. Trucks need a clear road route to reach waste.';
+  else if(city.v6.unstockedShops)advice='Shops are running out of goods. Connect developed industry and keep truck routes moving.';
+  else if(city.traffic<65)advice='Upgrade busy roads to avenues. Create a bus line between homes and jobs, and upgrade queueing junctions.';
   else if(city.cashflow<0)advice='Expenses exceed taxes. Grow your tax base and avoid adding unnecessary services.';
   $('adviser').textContent=advice;
 }
@@ -845,16 +840,16 @@ function drawTrends(){
   const max=Math.max(100,...city.history.map(h=>h.population));g.strokeStyle='#7edbb6';g.lineWidth=2;g.beginPath();
   city.history.forEach((h,i)=>{const x=4+i/(city.history.length-1)*(c.width-8),y=c.height-4-h.population/max*(c.height-8);i?g.lineTo(x,y):g.moveTo(x,y);});g.stroke();
 }
-$('densitySelect').onchange=e=>{density=Number(e.target.value);showToast(density?'New zones support 2.5× capacity; education helps them grow.':'New zones use low density.');};
+$('densitySelect').onchange=e=>{density=Number(e.target.value);showToast(density?'New zones cost 2× and support 2.5× capacity; education helps them grow.':'New zones use low density.');};
 $('districtSelect').onchange=e=>{districtBrush=Number(e.target.value);syncV5Controls();};
 $('districtName').onchange=e=>{if(districtBrush){city.districtNames[districtBrush-1]=e.target.value.trim().slice(0,24)||'District '+districtBrush;syncV5Controls();}};
 $('districtPolicy').onchange=e=>{if(districtBrush){city.districtPolicies[districtBrush-1]=e.target.value;mapDirty=true;}};
-$('zoomIn').onclick=()=>{camera.zoom=clamp(camera.zoom*1.2,1,3);applyCamera();};
-$('zoomOut').onclick=()=>{camera.zoom=clamp(camera.zoom/1.2,1,3);applyCamera();};
+$('zoomIn').onclick=()=>{camera.zoom=clamp(camera.zoom*1.2,1,5);applyCamera();};
+$('zoomOut').onclick=()=>{camera.zoom=clamp(camera.zoom/1.2,1,5);applyCamera();};
 $('resetView').onclick=()=>{camera={zoom:1,x:0,y:0};applyCamera();};
 $('exportBtn').onclick=()=>{
-  const url=URL.createObjectURL(new Blob([JSON.stringify({version:5,city})],{type:'application/json'}));
-  const a=document.createElement('a');a.href=url;a.download='metroforge-v5-city.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  const url=URL.createObjectURL(new Blob([JSON.stringify(saveSnapshot())],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download='metroforge-v6-city.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 $('importBtn').onclick=()=>$('importFile').click();
 $('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;if(f.size>3e6){showToast('Save file is too large.');e.target.value='';return;}
@@ -872,7 +867,7 @@ window.addEventListener('keydown',e=>{
 });
 $('demoBtn').onclick=()=>{
   if(!confirm('Start a fresh showcase city? Save or export your current city first.'))return;
-  city=freshCity();
+  city=freshCity();transport=null;routeDraft=[];drawingRoute=false;
   const put=(x,y,type,level=0)=>{const t=tileBase(type);t.level=level;city.grid[y][x]=t;};
   for(let x=0;x<27;x++)put(x,27,'avenue');
   for(const y of [9,15,21])for(let x=5;x<27;x++)put(x,y,'road');
@@ -881,7 +876,55 @@ $('demoBtn').onclick=()=>{
     if(isRoad(city.grid[y][x].type))continue;
     const type=x>20?'industrial':y===20?'commercial':'residential';put(x,y,type,2);city.grid[y][x].district=x>20?3:x>12?2:1;
   }
-  for(const [x,y,t]of [[6,8,'wind'],[7,8,'wind'],[8,8,'waterTower'],[13,8,'school'],[14,8,'park'],[15,8,'hospital'],[20,8,'power'],[21,8,'recycle'],[6,16,'police'],[13,16,'fire'],[6,22,'bus'],[13,22,'bus'],[20,22,'metro']])put(x,y,t);
-  cars=[];rain=[];inspectTile=null;invalidate();simulationStep();city.funds=50000;city.paused=true;syncControls();syncV5Controls();updateUI();showToast('Showcase loaded and paused. Press Play to grow your city.');
+  for(const [x,y,t]of [[6,8,'wind'],[7,8,'wind'],[8,8,'waterTower'],[13,8,'school'],[14,8,'park'],[15,8,'hospital'],[20,8,'power'],[21,8,'recycle'],[6,16,'police'],[13,16,'fire'],[6,22,'bus'],[13,22,'bus'],[20,22,'metro'],[7,22,'garbage']])put(x,y,t);
+  cars=[];rain=[];inspectTile=null;invalidate();simulationStep();city.funds=50000;city.paused=true;syncControls();syncV5Controls();updateUI();city.v6.routes=[{id:1,name:'Central Loop',stops:[[6,22],[13,22]],buses:2}];city.v6.nextRouteId=2;transport.rebuild();transport.daily();updateV6UI();showToast('V6 showcase loaded with a bus line. Press Play to grow.');
+};
+function saveSnapshot(){return {version:6,city:{...city,v6:{...city.v6,households:[]}}};}
+function drawTransitLines(){
+  if(!$('showRoutes').checked&&selected!=='route')return;
+  ctx.lineWidth=2;ctx.globalAlpha=.8;
+  const colors=['#f9aa65','#91daf3','#d0aaf3','#e5dc7e'];
+  for(const [i,r]of (transport?.routes||[]).entries())if(r.active){
+    ctx.strokeStyle=colors[i%colors.length];for(const path of r.paths){ctx.beginPath();path.forEach((p,j)=>j?ctx.lineTo((p[0]+.5)*TILE,(p[1]+.5)*TILE):ctx.moveTo((p[0]+.5)*TILE,(p[1]+.5)*TILE));ctx.stroke();}
+  }
+  for(const [i,p]of routeDraft.entries()){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc((p[0]+.5)*TILE,(p[1]+.5)*TILE,8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#223b46';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(i+1,(p[0]+.5)*TILE,(p[1]+.5)*TILE+3);}
+  ctx.globalAlpha=1;ctx.lineWidth=1;
+}
+function updateRouteUI(){
+  $('routeDraft').textContent=drawingRoute?routeDraft.length+' stops selected — tap bus stops on the map':'Choose New line, then tap at least two connected stops.';
+  $('saveRoute').disabled=routeDraft.length<2;
+  const list=$('routeList');list.replaceChildren();
+  for(const r of transport?.routes||[]){
+    const row=document.createElement('div');row.className='route-item';const text=document.createElement('span');text.textContent=r.name+' · '+r.stops.length+' stops · '+r.buses+' buses · '+(r.active?r.riders+' riders':'ROAD DISCONNECTED');
+    const more=document.createElement('button');more.textContent='+ Bus';more.title='$18/day per additional bus';more.onclick=()=>{const line=city.v6.routes.find(l=>l.id===r.id);if(line.buses>=4)return showToast('Maximum 4 buses per line.');line.buses++;transport.rebuild();transport.transitPass();updateRouteUI();};
+    const remove=document.createElement('button');remove.textContent='Remove';remove.onclick=()=>{city.v6.routes=city.v6.routes.filter(l=>l.id!==r.id);city.v6.vehicles=city.v6.vehicles.filter(v=>v.routeId!==r.id);transport.rebuild();transport.transitPass();updateRouteUI();};
+    row.appendChild(text);row.appendChild(more);row.appendChild(remove);list.appendChild(row);
+  }
+}
+function updateV6UI(){
+  $('householdStat').textContent=city.v6.householdCount.toLocaleString();$('workersStat').textContent=city.v6.employed+' / '+city.v6.workers;$('studentsStat').textContent=city.v6.students.toLocaleString();
+  $('queueStat').textContent=city.v6.queues+' vehicles waiting';$('deliveryStat').textContent=Math.round(city.v6.delivered)+' goods delivered';$('garbageStat').textContent=Math.round(city.v6.collected)+' waste collected';
+  const b=budgetBreakdown(city,BUILD,city.v6.routes.reduce((s,r)=>s+r.buses,0));
+  const labels={residential:'Residential tax',commercial:'Commercial tax',industrial:'Industrial tax',fares:'Transit fares',roads:'Road upkeep',zones:'Property upkeep',services:'City services',transit:'Bus operations',policies:'Policies',debt:'Loan repayment'};
+  const table=$('budgetRows');table.replaceChildren();
+  for(const [key,label]of Object.entries(labels)){const row=document.createElement('div');row.className='budget-row';const l=document.createElement('span'),v=document.createElement('strong');l.textContent=label;v.textContent=money(b[key]);row.appendChild(l);row.appendChild(v);table.appendChild(row);}
+  $('budgetTotal').textContent='Projected net '+money(b.net)+'/day';updateRouteUI();
+}
+$('newRoute').onclick=()=>{drawingRoute=true;routeDraft=[];setTool('route');updateRouteUI();showToast('Tap connected bus stops in order. On mobile, switch to Map.');};
+$('cancelRoute').onclick=()=>{drawingRoute=false;routeDraft=[];setTool('inspect');updateRouteUI();};
+$('saveRoute').onclick=()=>{
+  if(routeDraft.length<2)return showToast('Select at least two bus stops.');if(city.v6.routes.length>=12)return showToast('Maximum 12 lines.');
+  const paths=routeDraft.map((p,i)=>transport.path(p,routeDraft[(i+1)%routeDraft.length]));
+  if(paths.some(p=>p.length<2))return showToast('All stops must have a road route between them and distinct road access.');
+  const id=city.v6.nextRouteId++;city.v6.routes.push({id,name:$('routeName').value.trim().slice(0,32)||'Bus line '+id,stops:routeDraft.map(p=>[...p]),buses:1});drawingRoute=false;routeDraft=[];transport.rebuild();transport.transitPass();setTool('inspect');updateRouteUI();showToast('Bus line saved. Buses cost $18/day each.');
+};
+$('upgradeBuilding').onclick=()=>{
+  if(!inspectTile)return;const c=city.grid[inspectTile.y][inspectTile.x],tax=c.type==='residential'?city.taxes.res:c.type==='commercial'?city.taxes.com:city.taxes.ind;
+  if(!isZone(c.type)||c.level>=4||developmentBlockers(c,tax).length)return showToast('Resolve the listed development blockers first.');
+  const cost=(c.level+1)*200;if(city.funds<cost)return showToast('Need '+money(cost)+' to upgrade.');city.funds-=cost;c.level++;simulationStep(false);updateUI();mapDirty=true;
+};
+$('changeDensity').onclick=()=>{
+  if(!inspectTile)return;const c=city.grid[inspectTile.y][inspectTile.x];if(!isZone(c.type))return;const cost=c.density?150:350;
+  if(city.funds<cost)return showToast('Need '+money(cost)+' to convert.');city.funds-=cost;c.density=c.density?0:1;simulationStep(false);updateUI();mapDirty=true;
 };
 simulationStep();syncControls();syncV5Controls();updateUI();applyCamera();

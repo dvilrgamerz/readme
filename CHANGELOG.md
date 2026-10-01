@@ -1,3 +1,14 @@
+# V6 — Traffic & Economy
+
+- 64×40 maps with V4/V5 migration and portable V6 backups.
+- Traffic queues, following gaps, signal phases and junction yielding.
+- Custom bus loops, editable fleet sizes, route overlays and fares.
+- Factory inventories, staffed production, physical deliveries and garbage pickup.
+- Household groups, students, employment and reachable commutes.
+- Paid building upgrades, density conversion and development blockers.
+- Detailed daily budget and logistics reports.
+- Chromium desktop/mobile playtests and screenshot artifacts in CI.
+
 # V5 — Connected Cities
 
 - Bridges, wind turbines, high-density zones, road upgrades, destination-based cars.
