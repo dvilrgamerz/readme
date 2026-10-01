@@ -8,8 +8,8 @@ function fixture(){const grid=Array.from({length:8},()=>Array.from({length:20},(
  const put=(x,y,type)=>grid[y][x]=tile(type);return {city,grid,put,start(){roadNetwork(grid);const traffic=new TrafficEngine(city),expansion=new ExpansionEngine(city,traffic);traffic.onEmergencyArrival=v=>expansion.arrived(v);return {traffic,expansion};}};}
 test('rail follows only connected tracks and carries reserved goods to a reachable destination',()=>{
  const f=fixture();f.put(1,3,'cargoTerminal');f.put(15,3,'cargoTerminal');for(let x=1;x<=15;x++)f.grid[3][x].rail=true;
- f.put(2,5,'industrial').goods=100;f.put(16,5,'commercial');const {expansion}=f.start();assert.equal(railPath(f.grid,[1,3],[15,3]).length,15);
- expansion.update(.1);assert.equal(f.grid[5][2].goods,40);assert.equal(f.grid[5][16].stock,0,'inventory is reserved until arrival');
+ f.put(2,5,'industrial').goods=100;f.put(16,5,'commercial');const {traffic,expansion}=f.start();assert.equal(railPath(f.grid,[1,3],[15,3]).length,15);
+ expansion.update(.1);assert.equal(f.grid[5][2].goods,40);assert.equal(f.grid[5][16].stock,0,'inventory is reserved until arrival');traffic.dispatch();assert.equal(f.city.v6.vehicles.filter(v=>v.kind==='cargo').length,0,'an inbound rail load suppresses duplicate road trucks');
  for(let i=0;i<100;i++)expansion.update(.1);assert.equal(f.grid[5][16].stock,60);assert.equal(f.city.v7.railDelivered,60);assert.equal(f.grid[5][2].goods+f.grid[5][16].stock,100);
  f.grid[3][8].rail=false;assert.deepEqual(railPath(f.grid,[1,3],[15,3]),[]);
 });

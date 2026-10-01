@@ -122,7 +122,7 @@ export class TrafficEngine{
     for(let y=0;y<this.grid.length;y++)for(let x=0;x<this.w;x++){
       const c=this.grid[y][x];if(!c.connected)continue;
       if(c.type==='industrial'&&c.goods>=5)factories.push([x,y]);
-      if(c.type==='commercial'&&c.level&&c.stock<35&&!this.state.vehicles.some(v=>v.kind==='cargo'&&same(v.target,[x,y])))shops.push([x,y]);
+      if(c.type==='commercial'&&c.level&&c.stock<35&&!this.state.vehicles.some(v=>v.kind==='cargo'&&same(v.target,[x,y]))&&!this.city.v7?.trains.some(t=>t.payload&&same(t.payload.target,[x,y])))shops.push([x,y]);
       if(c.type==='garbage')depots.push([x,y]);
       if(isZone(c.type)&&c.trash>=8&&!this.state.vehicles.some(v=>v.kind==='garbage'&&same(v.target,[x,y])))trash.push([x,y]);
     }
