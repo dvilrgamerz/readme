@@ -1,116 +1,82 @@
-# MetroForge V4 🏙️
+# MetroForge V5
 
-**MetroForge** is an original browser city-building simulation designed to grow into a deep city-management game.
+**Build a town. Connect a region. Shape a metropolis.**
 
-## 🎮 Live Demo
+MetroForge is an original, free browser city builder inspired by the road planning, zoning, and municipal management of games such as Cities: Skylines. It is a lightweight **2D simulation**, with no installation, account, paid assets, or API keys required.
 
-**https://dvilrgamerz.github.io/readme/**
+## Play now
 
-No download is required. The game runs directly in the browser through GitHub Pages.
+**[Launch MetroForge →](https://dvilrgamerz.github.io/readme/)**
 
-## Current Version: V4
+Use **Showcase** in the Build panel to explore an established city. It starts paused; press Play when you're ready. Showcase replaces the current city, so save or export first.
 
-MetroForge has now gone through three major expansion stages:
+## What's new in V5
 
-### V2 — Management Expansion
-- Land value
-- Pollution
-- Health
-- Education
-- Crime
-- Service coverage
-- City policies
-- Service budgets
-- Municipal loans
-- Improved economy and zoning growth
+| System | What you can do |
+|---|---|
+| Traffic | Watch vehicles follow shortest road routes between homes and workplaces. Inspect busy road segments with the traffic overlay. |
+| Regional roads | Connect to any map edge, upgrade roads to avenues, and build bridges across the river. |
+| Neighborhoods | Choose low or high density when zoning. High density provides 2.5× capacity and benefits from education. |
+| Districts | Paint named districts; choose balanced, green, or business policies for each one. |
+| Clean energy | Supply 200 MW per connected wind turbine without power-plant pollution. |
+| Building health | Inspect road and utility access, development level, residents, jobs, pollution, and abandonment pressure. |
+| City planning | Follow the mayor's adviser, zone-demand meters, alerts, and a 40-day population chart. |
+| Controls | Pan, zoom, fit the map, paint continuous lines, and use keyboard shortcuts or touch. |
+| Saves | Save locally, export/import JSON backups, and load existing V4 saves. Invalid saves leave the current city intact. |
+| Performance | Cache the map layer and road/service data; refresh the dashboard four times per second rather than every animation frame. |
 
-### V3 — Traffic & Transit Expansion
-- Connected road networks
-- Zones need road access
-- Roads and avenues
-- Animated vehicles
-- Traffic congestion
-- Bus stops
-- Metro stations
-- Transit ridership
-- Traffic overlay
+V2–V4 systems remain: taxes, municipal loans, service budgets, parks, education, healthcare, safety, recycling, buses, metro capacity, weather, disasters, day/night lighting, missions, and milestones.
 
-### V4 — World Simulation Expansion
-- 48×30 city map
-- Procedural map generation
-- Rivers
-- Day/night cycle
-- Dynamic weather
-- Rain and storms
-- Fire and flood disasters
-- District painting
-- Hospitals
-- Recycling centers
-- Missions and rewards
-- Expanded milestones
-- Land-value overlay
-- Pollution overlay
-- Service overlay
-- Advanced happiness simulation
-- Education, health, crime and pollution statistics
-- City debt and loan system
-- Automatic saves
-- Manual save/load
-- Responsive UI
-- Mouse-wheel zoom
+## First city in five steps
 
-## 🛠️ V4 Bug Fix + UI + Release Plan
+1. Extend the starter highway near the bottom-left corner. Roads must connect to a map edge.
+2. Zone residential homes and commercial/industrial jobs immediately beside connected roads.
+3. Build connected wind turbines or a power plant, plus a water tower. Zones need road access, power, and water to develop.
+4. Press Play and balance jobs, income, and services as buildings grow.
+5. Add parks and schools; upgrade busy roads, paint districts, and expand across the river with bridges.
 
-See the full implementation checklist:
-
-**[MetroForge V4: Bug Fixes, UI Audit, and Release Plan](docs/V4_BUG_FIX_UI_RELEASE_PLAN.md)**
-
-The plan covers stability fixes, roads/avenues, zoning, utilities, save/load, policies, overlays, districts, traffic/transit, weather/disasters, missions, desktop/mobile UI, accessibility, performance, automated tests, QA, and the V4 release sequence.
-
-## How to Play
-
-1. Connect your starter road to the city.
-2. Build residential, commercial, and industrial zones next to connected roads.
-3. Add electricity and water.
-4. Grow jobs and population together.
-5. Use schools, hospitals, police, fire stations, parks and recycling to improve the city.
-6. Watch traffic, pollution, land value, health and education.
-7. Complete missions and population milestones for bonus funding.
-8. Use buses, metro stations, avenues and policies as the city becomes larger.
+Avoid spending all your money on services before you have a tax base. Buildings lose development after sustained poor conditions; restore access and utilities to recover.
 
 ## Controls
 
-- **Left click / drag:** Build
-- **Right click:** Bulldoze
-- **Mouse wheel:** Zoom
-- **Pause / 1× / 2× / 4×:** Simulation speed
-- **Overlays:** Inspect land value, traffic, pollution and services
+| Action | Desktop | Phone / tablet |
+|---|---|---|
+| Build | Select tool, click or drag | Build & manage → select tool → Map → touch or drag |
+| Inspect | `I`, then select property | Choose Inspect, tap property, open City report |
+| Pan | Pan tool or Shift/middle-button drag | Pan tool, then drag |
+| Zoom | Wheel or + / − | + / − buttons |
+| Reset camera | Fit map | Fit map |
+| Bulldoze | Right-drag or `B` | Bulldoze tool |
+| Pause | Space or pause button | Pause button |
+| Quick tools | `R` road, `A` avenue, `H` homes, `C` shops, `F` industry, `P` pan | Build panel |
 
-## Version History
+## Understand the city
 
-See [CHANGELOG.md](CHANGELOG.md).
+- **Demand percentages** show how attractive new zoning is; they are not your city's land-use proportions.
+- **Tax percentages** set the tax rate for each zone. High taxes discourage growth.
+- **Service budget** scales service expenses and service effectiveness; roads and zoning upkeep are unaffected.
+- **Traffic percentage** is an aggregate road-capacity estimate; higher is better. The traffic overlay shows the activity of visible vehicles per road segment.
+- **Utilities** show current use / connected supply. Towers and generators need connected roads; distribution is city-wide rather than simulated pipes or cables.
+- **Green Initiative** costs $60/day and reduces pollution. **Free Transit** costs $90/day and increases transit capacity. **Education Boost** costs $80/day and improves education.
+- **District green policy** reduces local pollution and raises land value. **Business policy** improves job-zone development while increasing local pollution.
+- **Red building dots** indicate a missing road, electricity, or water connection. Use Inspect to find the cause.
 
-Version notes:
-- [V2](versions/V2.md)
-- [V3](versions/V3.md)
-- [V4](versions/V4.md)
+## Save your work
 
-## Future V5 Ideas
+Save and autosave are stored in this browser on this device. Use **Export** for a portable backup, then **Import** on another device. A V5 load checks V5 slots first, then V4 saves. V4 files migrate automatically; utilities and access are recalculated. Browser privacy settings or clearing site data can remove local saves.
 
-- Destination-based traffic pathfinding
-- Intersections and traffic lights
-- Custom bus routes
-- Rail and cargo networks
-- Individual citizens and households
-- Building abandonment
-- Supply chains
-- Tourism
-- District-specific laws
-- Terrain height and terraforming
-- Map editor
-- Much larger maps
-- 3D edition
+## Run and test locally
 
-## Project Goal
+```sh
+python3 -m http.server 8000
+# Open http://localhost:8000
+npm test
+```
 
-Build MetroForge into a large, original city-building game while keeping a free browser version playable through GitHub Pages.
+Node 20+ is required for tests; the browser game needs no npm dependencies or build step. GitHub Pages can serve the repository root directly from `main`.
+
+## Scope
+
+This release retains the 48×30 map and Canvas 2D renderer. Vehicles use home-to-job road routes, with an aggregate congestion model. Transit contributes connected capacity; it does not have editable bus routes. Individual households, detailed supply chains, rail, terraforming, and a full 3D engine are future work.
+
+[Changelog](CHANGELOG.md) · [V5 release notes](versions/V5.md) · [V4 release plan](docs/V4_BUG_FIX_UI_RELEASE_PLAN.md)

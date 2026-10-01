@@ -1,3 +1,12 @@
+# V5 — Connected Cities
+
+- Bridges, wind turbines, high-density zones, road upgrades, destination-based cars.
+- Named districts with local green/business policies and property inspection.
+- Cached rendering, cached road/service data, throttled UI and time-based animations.
+- Mobile Map/Build/City panels, touch painting, camera controls, shortcuts and adviser.
+- Validated saves, V4 migration, portable backups and storage failure handling.
+- Connectivity, service-budget, disconnected-utility and development fixes.
+
 # MetroForge Version History
 
 ## V2 — City Systems Expansion
