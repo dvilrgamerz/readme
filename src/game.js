@@ -206,7 +206,7 @@ function makeTools(){
     b.onclick=()=>setTool(key);
     g.appendChild(b);
   }
-  setTool("road");
+  setTool(selected);
 }
 makeTools();
 
@@ -730,6 +730,7 @@ $("freeTransitPolicy").onchange=e=>city.policies.freeTransit=e.target.checked;
 $("educationPolicy").onchange=e=>city.policies.education=e.target.checked;
 
 function syncControls(){
+  makeTools();
   $("resTax").value=city.taxes.res;$("resTaxLabel").textContent=city.taxes.res+"%";
   $("comTax").value=city.taxes.com;$("comTaxLabel").textContent=city.taxes.com+"%";
   $("indTax").value=city.taxes.ind;$("indTaxLabel").textContent=city.taxes.ind+"%";
@@ -923,9 +924,9 @@ function initV7(){
  $('loadDesign').onclick=()=>{if(!confirm('Load this city design? Save or export your current city first.'))return;loadDesign(select.value);};
  $('challengeSelect').onchange=e=>{city.v7.challenge=e.target.value||null;city.v7.streak=0;updateV7UI();};
  $('testEmergency').onclick=()=>{const homes=[];city.grid.forEach((row,y)=>row.forEach((c,x)=>{if(c.type==='residential'&&c.level&&c.connected)homes.push([x,y]);}));if(!homes.length)return showToast('Build a populated home with road access first.');if(expansion.incident($('emergencyKind').value,homes[0]))showToast('Test emergency started. Follow the marked home and responding vehicle.');};
- $('editorStart').onclick=()=>{if(editorBackup)return;editorBackup=JSON.stringify(saveSnapshot());city=JSON.parse(editorBackup).city;city.v7.freeBuild=true;city.paused=true;transport=null;invalidate();simulationStep(false);setTool('road');$('editorBrush').value='road';updateV7UI();showToast('Map editor open. Paint terrain or roads. Apply keeps edits; Cancel restores your city.');};
+ $('editorStart').onclick=()=>{if(editorBackup)return;editorBackup=JSON.stringify(saveSnapshot());city=JSON.parse(editorBackup).city;city.v7.freeBuild=true;city.paused=true;transport=null;invalidate();simulationStep(false);makeTools();setTool('road');$('editorBrush').value='road';updateV7UI();showToast('Map editor open. Paint terrain or roads. Apply keeps edits; Cancel restores your city.');};
  $('editorBrush').onchange=e=>{setTool(['water','empty'].includes(e.target.value)?'road':e.target.value);};
- $('editorApply').onclick=()=>{if(!editorBackup)return;const previous=JSON.parse(editorBackup).city;city.v7.freeBuild=previous.v7.freeBuild;city.funds=previous.funds;editorBackup=null;invalidate();simulationStep(false);updateUI();showToast('Custom map applied. Save or export to keep it.');};
+ $('editorApply').onclick=()=>{if(!editorBackup)return;const previous=JSON.parse(editorBackup).city;city.v7.freeBuild=previous.v7.freeBuild;city.funds=previous.funds;editorBackup=null;invalidate();simulationStep(false);makeTools();updateUI();showToast('Custom map applied. Save or export to keep it.');};
  $('editorCancel').onclick=()=>{if(!editorBackup)return;const saved=editorBackup;editorBackup=null;loadRaw(saved);showToast('Map edits cancelled.');};
  $('undoStop').onclick=()=>{routeDraft.pop();updateRouteUI();};
 }
