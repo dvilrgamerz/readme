@@ -1,7 +1,7 @@
 name: Test and deploy MetroForge
 on:
   push:
-    branches: [main, v7-land-expansion]
+    branches: [main, v7-large-region-move]
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,7 +34,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: metroforge-v7-land-browser-qa
+          name: metroforge-v7-region-move-qa
           path: qa-artifacts/
       - name: Check Pages setup
         id: pages

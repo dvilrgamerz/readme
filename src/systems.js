@@ -60,7 +60,7 @@ export function coverageFields(grid, specs) {
 export function parseSave(raw, defaults, allowedTypes, w, h) {
   const input=JSON.parse(raw), data=input?.city||input;
   if(!data||!Array.isArray(data.grid))throw Error('Wrong map dimensions');
-  const legacy=w===64&&h===40&&data.grid.length===30&&data.grid.every(row=>Array.isArray(row)&&row.length===48);
+  const legacy=((w===64&&h===40)||(w===256&&h===160))&&((data.grid.length===30&&data.grid.every(row=>Array.isArray(row)&&row.length===48))||(w===256&&data.grid.length===40&&data.grid.every(row=>Array.isArray(row)&&row.length===64)));
   if(!legacy&&(data.grid.length!==h||data.grid.some(row=>!Array.isArray(row)||row.length!==w)))throw Error('Wrong map dimensions');
   const finite=(v,min,max,fallback)=>Number.isFinite(v)?Math.max(min,Math.min(max,v)):fallback;
   const out=structuredClone(defaults);

@@ -1,3 +1,12 @@
+# V7.2 — Full-Size Regions & Building Moves
+
+- Sixteen 64×40 plots in a 256×160 world: 40,960 tiles of city space.
+- Focused city view, Expand city zoom-out and one-click navigation into owned plots.
+- Viewport rendering with plot caches and compact regional save records.
+- Free-build drag/drop or tap-to-move buildings, placement previews and cancellation.
+- Preserve building development, inventory, route stops and incidents during relocation.
+- Safely migrate earlier cities into the first full map with room to expand.
+
 # V7.1 — Land Expansion
 
 - Start new cities with A4 and purchase adjoining 16×10 plots in the 4×4 region.
