@@ -195,7 +195,7 @@ function setTool(tool){
 
 function makeTools(){
   const g = $("toolGrid");
-  g.innerHTML="";
+  g.replaceChildren();
   for(const [key,icon] of TOOLS){
     const meta = key==="bulldoze" ? {name:"Bulldoze",cost:5} : BUILD[key] || {name:key==="inspect"?"Inspect":key==="route"?"Bus route":key==="signal"?"Traffic lights":"Pan",cost:0};
     const b = document.createElement("button");
