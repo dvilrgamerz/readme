@@ -1,3 +1,8 @@
+<!-- DVILR PROJECT COVER v1 -->
+<p align="center"><img src="./assets/dvilr-project-banner.svg" width="100%" alt="MetroForge: Build cities. Connect districts. Shape a region." /></p>
+<p align="center"><a href="https://github.com/dvilrgamerz"><strong>Developer profile</strong></a> · <a href="https://github.com/dvilrgamerz/readme"><strong>Source</strong></a> · <a href="https://dvilrgamerz.github.io/readme/"><strong>Live app ↗</strong></a></p>
+<!-- /DVILR PROJECT COVER -->
+
 # MetroForge V7.2
 
 **Build a town. Connect a region. Shape a metropolis.**
