@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body data-mobile-panel="map">
+  <a class="skip-link" href="#main-content">Skip to city builder</a>
   <div id="app">
     <header class="topbar">
       <div class="brand">
@@ -31,7 +32,7 @@
     </header>
 
     <nav class="mobile-tabs" aria-label="Game panels"><button id="mapTab" class="active">Map</button><button id="buildTab">Build & manage</button><button id="cityTab">City report</button></nav>
-    <main class="layout">
+    <main class="layout" id="main-content" tabindex="-1">
       <aside class="panel left">
         <section class="land-planner">
  <div class="section-title"><h2>Land expansion</h2><span>REGION</span></div><p id="landSummary" class="help-text"></p>
