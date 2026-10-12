@@ -89,3 +89,9 @@ button{border-radius:6px;background:#20363f;transition:background .15s,border-co
 .route-item{flex-wrap:wrap}.route-item span{flex-basis:100%}#designName{color:#9be6bd;font-weight:700}.button-row{flex-wrap:wrap}input[type=checkbox]{accent-color:#80dcb9}
 
 .land-planner{border:1px solid #42696a;background:#172e36;border-radius:12px;padding:12px}.plot-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:10px}.plot-button{min-width:0;min-height:37px;padding:4px;font-size:11px}.plot-button.owned{background:#245343;color:#a9efc9}.plot-button.available{border-color:#b38d52;color:#ffdd9c}.plot-button.locked{color:#92a7b0}.plot-button.selected{outline:2px solid #fff}#buyPlot{border-color:#62bb9b}
+
+/* Keyboard and motion accessibility for the dense city-builder UI. */
+.skip-link{position:fixed;z-index:9999;top:8px;left:8px;padding:12px 16px;background:#123e35;color:#fff;border:2px solid #8fffd0;border-radius:10px;transform:translateY(-170%);transition:transform .15s ease}
+.skip-link:focus{transform:translateY(0)}
+:where(button,a,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #9dffce;outline-offset:3px}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
